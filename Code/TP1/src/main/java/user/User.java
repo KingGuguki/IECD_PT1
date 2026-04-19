@@ -416,6 +416,8 @@ public class User {
 	this.photography = photo;
 	return true;
     }
+    
+    
 
     /**
      * @return objeto que representa a nacionalidade
@@ -552,6 +554,103 @@ public class User {
 
 	return user;
     }
+    
+    /**
+     * Regista um novo utilizador, cria os nós XML apropriados (incluindo estatísticas) 
+     * e guarda no disco usando as funções nativas da classe.
+     */
+/**
+     * Regista um novo utilizador, cria os nós XML apropriados na ordem correta e guarda no disco.
+     */
+    public static synchronized User register(String nick, String pass, String foto, String nac, int idade) throws Exception {
+        
+        // 1. Verificar se o username já existe
+        NodeList us = XMLDoc.getXPath("/users/user[username/text()='" + nick + "']", doc);
+        if (us.getLength() > 0) {
+            throw new Exception("O username '" + nick + "' já está em uso!");
+        }
+
+        // 2. Criar a instância de User
+        User u = new User(); 
+        u.setBlocked(false); 
+        
+        if (!u.setUsername(nick)) {
+            throw new Exception("Username inválido! Deve ter entre 4 e 10 caracteres.");
+        }
+        
+        u.setPassword(pass); 
+        u.setPhotography(foto); 
+        u.setNationality(nac); 
+        u.setBirthdate(LocalDate.now().minusYears(idade));
+
+        // 3. Construir o Elemento XML respeitando a ORDEM RIGOROSA do XSD
+        Element userElement = doc.createElement("user");
+
+        // A ordem obrigatória do ficheiro user.xsd é:
+        // userid -> updated -> blocked -> profile -> username -> firstnames -> lastnames -> email -> gender -> birthdate -> photography -> nationality -> password
+        
+        addChild(doc, userElement, "userid", u.getUserId().toString());
+        addChild(doc, userElement, "updated", dateTimeToXsd(u.getUpdated()));
+        addChild(doc, userElement, "blocked", "false");
+        addChild(doc, userElement, "profile", String.valueOf(u.getProfile()));
+        addChild(doc, userElement, "username", u.getUsername());
+
+        // Nomes (obrigatórios no XSD)
+        addChild(doc, userElement, "firstnames", "Desconhecido");
+        addChild(doc, userElement, "lastnames", "Desconhecido");
+
+        // Email e Gender (Opcionais, mas preenchemos com valores padrão para manter a sequência feliz)
+        addChild(doc, userElement, "email", u.getUsername() + "@mail.pt");
+        addChild(doc, userElement, "gender", "X");
+
+        // Data de Nascimento
+        if (u.getBirthdate() != null) {
+            addChild(doc, userElement, "birthdate", dateToXsd(u.getBirthdate()));
+        }
+
+        // Fotografia Base64
+        if (u.getPhotography() != null) {
+            addChild(doc, userElement, "photography", u.getPhotography().getBase64());
+        }
+
+        // Nacionalidade
+        if (u.getNationality() != null) {
+            addChild(doc, userElement, "nationality", u.getNationality().getAbbreviation());
+        }
+
+        // Password (Hash)
+        addChild(doc, userElement, "password", u.getPassword());
+
+        // --- ESTATÍSTICAS DO JOGO ---
+        // ATENÇÃO: Se o servidor der um erro de XSD a dizer "Invalid content... 'vitorias'", 
+        // significa que precisas de ir ao teu ficheiro `users.xsd` ou `user.xsd` e adicionar estas 3 tags!
+        addChild(doc, userElement, "vitorias", "0");
+        addChild(doc, userElement, "derrotas", "0");
+        addChild(doc, userElement, "tempo", "0");
+
+        // 4. Anexar à Raiz do Documento
+        NodeList uss = doc.getElementsByTagName("users");
+        if (uss.getLength() != 1) {
+            throw new Exception("Erro interno: Não encontrou o elemento raiz <users>!");
+        }
+        uss.item(0).appendChild(userElement);
+
+        // 5. Gravar no disco (Faz a validação do XSD final)
+        _save(); 
+
+        return u;
+    }
+
+    /**
+     * Método auxiliar para criar elementos XML de forma mais limpa e evitar repetição de código.
+     */
+    private static void addChild(Document doc, Element parent, String name, String value) {
+        Element child = doc.createElement(name);
+        child.setTextContent(value != null ? value : "");
+        parent.appendChild(child);
+    }
+    
+
 
     /**
      * Mostra os dados do utilizador na consola

@@ -87,76 +87,122 @@ public class Jogador {
      *
      * @param args argumentos da linha de comando: host e porta
      */
-    public void main(String[] args) {
+public void main(String[] args) {
         // Lê os argumentos da linha de comando (se existirem).
         if (args != null && args.length == 2) {
             host = args[0];
             port = Integer.parseInt(args[1]);
         }  
         if(leitor == null) 
-        	leitor = new Scanner(System.in);
+            leitor = new Scanner(System.in);
         
         try (   
             // Tenta criar um socket para se conectar ao servidor.
             Socket socket = new Socket(host, port);
-            // Cria um adaptador para comunicar com o servidor.
-            Stub Stub = new Stub(socket)) {
+            // Cria um adaptador para comunicar com o servidor. (Usa letra minúscula para a variável!)
+            Stub stub = new Stub(socket)) {
 
             // Mostra informações sobre a ligação.
             System.out.println("Cliente -> Ligação estabelecida: " + socket);
             
-            System.out.println("Utilizadores existentes para teste:");
-            System.out.println("cartwheel:p1; milkshake:p2; gandalf:p4; opera:p5; smoke:p9; bagel:p10");
-            
-            // Lê o nome do utilizador.
-            System.out.println("<<< ***** Indique o seu nome de utilizador:");
-            int t=0;
-            String nome = null;
-            do {
-        	nome = leitor.nextLine();
-        	if(t++==3)  // termina o jogador
-        	    return;
-            }
-            while(nome.isBlank());
-            //String nome = System.console().readLine(); 
-            // Lê a senha do utilizador.
-            String senha = leSenha("<<< ***** Indique a sua senha:",leitor);
-           
-            // Inicia a sessão com o servidor e obtém o símbolo do jogador.
-            char simbolo=Stub.iniciar(nome, senha);
-            Stub.print();
+            System.out.println("1 - Login | 2 - Criar Conta");
+            int opcao = leitor.nextInt();
+            leitor.nextLine(); // Limpa o 'Enter' que ficou pendurado do nextInt()!
 
-            //System.out.println("Foi atribuído o simbolo: "+simbolo);
-            if(simbolo=='O')
-            	System.out.println("À espera que o oponente jogue...");
+            char simbolo = ' '; // Variável para guardar o 'X' ou 'O'
+
+            if (opcao == 2) {
+                // --- FLUXO DE REGISTO ---
+                System.out.println("<<< ***** CRIAR NOVA CONTA ***** >>>");
+                
+                System.out.print("Indique o seu nickname: ");
+                String nick = leitor.nextLine();
+                
+                String pass = leSenha("Indique a sua senha: ", leitor);
+                
+                System.out.print("Nacionalidade (Ex: PT, FR, UK): ");
+                String nac = leitor.nextLine();
+                
+                System.out.print("Idade: ");
+                int idade = leitor.nextInt();
+                leitor.nextLine(); // Limpar o 'Enter'
+
+                // NOVA LÓGICA PARA A FOTOGRAFIA:
+                System.out.print("Indique o caminho COMPLETO para a sua fotografia");
+                System.out.print("(Ex: C:\\Users\\O_Teu_Nome\\Desktop\\foto.jpg ou /Users/Nome/foto.jpg): ");
+                String caminhoFoto = leitor.nextLine();
+
+                // Usamos a classe do professor para ler a imagem e gerar a Base64
+                util.MyImage img = new util.MyImage(caminhoFoto);
+                if (!img.isOk()) {
+                    System.out.println("Erro: Não foi possível ler a imagem! A abortar...");
+                    return;
+                }
+                String foto = img.getBase64(); // A string gigante é gerada aqui de forma segura!
+
+                // Agora sim, chamamos o registo
+                simbolo = stub.registar(nick, pass, foto, nac, idade);
+                System.out.println("Conta criada com sucesso! A entrar na fila de espera...");
+
+            } else if (opcao == 1) {
+                // --- FLUXO DE LOGIN ---
+                System.out.println("<<< ***** LOGIN ***** >>>");
+                System.out.println("Utilizadores existentes para teste:");
+                System.out.println("cartwheel:p1; milkshake:p2; gandalf:p4; opera:p5; smoke:p9; bagel:p10");
+                
+                System.out.print("Indique o seu nome de utilizador: ");
+                String nome = leitor.nextLine();
+                
+                String senha = leSenha("Indique a sua senha: ", leitor);
+               
+                // Inicia a sessão com o servidor e obtém o símbolo do jogador.
+                simbolo = stub.iniciar(nome, senha);
+            } else {
+                System.out.println("Opção inválida! A fechar o jogo...");
+                return;
+            }
             
-            // Loop do jogo, enquanto não for o fim do jogo estado!="ND"
+            // Daqui para a frente, o código é comum! Tanto o Registo como o Login
+            // devolveram um símbolo e puseram o jogador no jogo.
+
+            //stub.print(); // Opcional: imprimir dados do jogador
+            System.out.println("Foi-lhe atribuído o simbolo: " + simbolo);
+            
+            if(simbolo == 'O') {
+                System.out.println("À espera que o oponente jogue...");
+            }
+            
+            // Loop do jogo, enquanto não for o fim do jogo (estado != "ND")
             for(;;) {
                 // Mostra o tabuleiro atual.
-            	Element tab=Stub.obter();
-                System.out.println(Stub.tabuleiroToTXT(tab));
-                String estado=tab.getAttribute("estado");
+                Element tab = stub.obter();
+                System.out.println(stub.tabuleiroToTXT(tab));
+                
+                String estado = tab.getAttribute("estado");
                 if(!estado.equals("ND")) {
-                	// Mostra o estado do jogo após a jogada.
-                	System.out.println(Stub.estadoToTXT(estado));
-                	if(!estado.equals("IV"))
-                		break;
+                    // Mostra o estado do jogo após a jogada.
+                    System.out.println(stub.estadoToTXT(estado));
+                    if(!estado.equals("IV"))
+                        break;
                 }
+                
                 LocalDateTime inicio = LocalDateTime.now();
+                
                 // Pede ao jogador para fazer uma jogada.
-                System.out.println("Joga " + simbolo + ": ");
+                System.out.print("Joga " + simbolo + ": ");
 
                 // Lê a jogada do jogador.
                 short jogada = readShort(leitor);
-                System.out.println(XMLDoc.tempoDif(inicio));
+                // System.out.println(XMLDoc.tempoDif(inicio)); // (Opcional, mede tempo)
+                
                 // Envia jogada para o servidor.
-                Stub.jogar(jogada);
+                stub.jogar(jogada);
             }
         } catch (Exception e) {
             System.err.println("Jogador: " + e.getLocalizedMessage());
             // e.printStackTrace();
         } finally {
-            System.out.println("Jogador: terminou o jogo!");
+            System.out.println("Jogador: terminou a execução!");
         }
     } // fim do método main
 } // fim da classe Jogador

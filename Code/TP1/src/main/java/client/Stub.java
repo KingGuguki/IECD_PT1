@@ -332,4 +332,31 @@ public class Stub implements AutoCloseable {
 		Document d = XMLDoc.parseString(resposta);  // consome a linha!
 		validXSD(d);
 	}
+	
+	public char registar(String nick, String pass, String foto, String nac, int idade) throws Exception {
+		// 1. Enviar a mensagem de registo para o servidor (conforme o teu novo XSD)
+	    os.println("<metodo><registar nickname='" + nick 
+	               + "' senha='" + pass 
+	               + "' foto='" + foto 
+	               + "' nacionalidade='" + nac 
+	               + "' idade='" + idade + "'/></metodo>");
+
+	    // 2. Receber a resposta do servidor
+	    String resposta = is.readLine();
+	    registaLog("Cliente{"+resposta+"}");
+	    
+	    if(resposta == null)
+	        throw new Exception("Ligação ao servidor cancelada remotamente!");
+
+	    // 3. Analisar o XML da resposta
+	    registo = XMLDoc.parseString(resposta);
+	    validXSD(registo); // Valida contra o metodos-cli.xsd
+	    
+	    // 4. Extrair o símbolo do jogador da resposta
+	    // O servidor, ao aceitar o registo, deve responder com o nó <jogador simbolo='...'/>
+	    NodeList jogadores = registo.getElementsByTagName("jogador");
+	    
+	    return ((Element)jogadores.item(0)).getAttribute("simbolo").charAt(0);
+	}
+	
 }

@@ -123,7 +123,7 @@ public class Servidor {
                     char atribuido = proximoSimbolo;
                     
                     // 📞 Comunica ao cliente (via Skeleton) qual será o seu símbolo
-                    Skeleton.runIniciar(element, atribuido);
+                    Skeleton.runEntrada(element, atribuido);
                     
                     // 📥 Coloca o socket na fila de espera para emparelhamento
                     queue.put(element);

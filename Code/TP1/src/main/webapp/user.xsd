@@ -45,6 +45,9 @@
 							</xs:appinfo>
 						</xs:annotation>
 					</xs:element>
+					<xs:element name="vitorias" type="xs:int" minOccurs="0"/>
+					<xs:element name="derrotas" type="xs:int" minOccurs="0"/>
+					<xs:element name="tempo" type="xs:int" minOccurs="0"/>
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>

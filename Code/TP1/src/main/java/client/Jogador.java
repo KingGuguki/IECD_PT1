@@ -176,7 +176,7 @@ public void main(String[] args) {
             for(;;) {
                 // Mostra o tabuleiro atual.
                 Element tab = stub.obter();
-                System.out.println(stub.tabuleiroToTXT(tab));
+                System.out.println(stub.tabuleiroPontosCaixasToTXT(tab));
                 
                 String estado = tab.getAttribute("estado");
                 if(!estado.equals("ND")) {

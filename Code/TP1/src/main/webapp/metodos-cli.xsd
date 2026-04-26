@@ -151,7 +151,7 @@
 	</xs:complexType>
 	<xs:complexType name="tabuleiroType">
 		<xs:sequence>
-			<xs:element name="Linha" maxOccurs="999" minOccurs = "0">
+			<xs:element name="linha" maxOccurs="999" minOccurs = "0">
 				<xs:complexType>
                     <xs:attribute name="tipo" type="xs:string" />
                     <xs:attribute name="linha" type="xs:integer" />
@@ -170,7 +170,6 @@
 					<xs:documentation>Elemento que representa uma casa no tabuleiro.
 					</xs:documentation>
 				</xs:annotation>
-			</xs:element>
 		</xs:sequence>
 		<xs:attribute type="estadoType" name="estado"
 			use="required">

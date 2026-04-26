@@ -109,7 +109,7 @@ public class Stub implements AutoCloseable {
 	    return sb.toString();
 	}
 
-	private String tabuleiroPontosCaixasToTXT(final Element tabuleiro) {
+	public String tabuleiroPontosCaixasToTXT(final Element tabuleiro) {
 	    int pontosLinhas = Integer.parseInt(tabuleiro.getAttribute("linhas"));
 	    int pontosColunas = Integer.parseInt(tabuleiro.getAttribute("colunas"));
 	    int totalLinhas = pontosLinhas * (pontosColunas - 1) + (pontosLinhas - 1) * pontosColunas;

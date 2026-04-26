@@ -110,73 +110,98 @@ public class Stub implements AutoCloseable {
 	}
 
 	public String tabuleiroPontosCaixasToTXT(final Element tabuleiro) {
-	    int pontosLinhas = Integer.parseInt(tabuleiro.getAttribute("linhas"));
-	    int pontosColunas = Integer.parseInt(tabuleiro.getAttribute("colunas"));
-	    int totalLinhas = pontosLinhas * (pontosColunas - 1) + (pontosLinhas - 1) * pontosColunas;
-	    boolean[][] hLine = new boolean[pontosLinhas][pontosColunas - 1];
-	    boolean[][] vLine = new boolean[pontosLinhas - 1][pontosColunas];
-	    char[][] caixas = new char[pontosLinhas - 1][pontosColunas - 1];
+		
+		// 1. LER ATRIBUTOS DA RAIZ COM PROTEÇÃO
+		String strLinhas = tabuleiro.getAttribute("linhas");
+		String strColunas = tabuleiro.getAttribute("colunas");
+		
+		// Se o servidor não enviar estes atributos (estiverem vazios), assumimos 3 por defeito
+		int pontosLinhas = (strLinhas == null || strLinhas.isEmpty()) ? 3 : Integer.parseInt(strLinhas);
+		int pontosColunas = (strColunas == null || strColunas.isEmpty()) ? 3 : Integer.parseInt(strColunas);
+		
+		int totalLinhas = pontosLinhas * (pontosColunas - 1) + (pontosLinhas - 1) * pontosColunas;
+		boolean[][] hLine = new boolean[pontosLinhas][pontosColunas - 1];
+		boolean[][] vLine = new boolean[pontosLinhas - 1][pontosColunas];
+		char[][] caixas = new char[pontosLinhas - 1][pontosColunas - 1];
 
-	    NodeList linhaNodes = tabuleiro.getElementsByTagName("linha");
-	    for (int i = 0; i < linhaNodes.getLength(); i++) {
-	        Element linha = (Element) linhaNodes.item(i);
-	        String tipo = linha.getAttribute("tipo");
-	        int l = Integer.parseInt(linha.getAttribute("linha"));
-	        int c = Integer.parseInt(linha.getAttribute("coluna"));
-	        boolean ocupada = "S".equals(linha.getAttribute("ocupada"));
-	        if ("H".equals(tipo)) {
-	            hLine[l][c] = ocupada;
-	        } else {
-	            vLine[l][c] = ocupada;
-	        }
-	    }
+		// 2. LER AS LINHAS
+		NodeList linhaNodes = tabuleiro.getElementsByTagName("linha");
+		for (int i = 0; i < linhaNodes.getLength(); i++) {
+			Element linha = (Element) linhaNodes.item(i);
+			
+			String strL = linha.getAttribute("linha");
+			String strC = linha.getAttribute("coluna");
+			
+			// Se por acaso vier uma tag <linha> vazia, ignoramos para não estoirar
+			if (strL == null || strL.isEmpty() || strC == null || strC.isEmpty()) continue;
+			
+			int l = Integer.parseInt(strL);
+			int c = Integer.parseInt(strC);
+			String tipo = linha.getAttribute("tipo");
+			boolean ocupada = "S".equals(linha.getAttribute("ocupada"));
+			
+			if ("H".equals(tipo)) {
+				hLine[l][c] = ocupada;
+			} else {
+				vLine[l][c] = ocupada;
+			}
+		}
 
-	    NodeList caixaNodes = tabuleiro.getElementsByTagName("caixa");
-	    for (int i = 0; i < caixaNodes.getLength(); i++) {
-	        Element caixa = (Element) caixaNodes.item(i);
-	        int l = Integer.parseInt(caixa.getAttribute("linha"));
-	        int c = Integer.parseInt(caixa.getAttribute("coluna"));
-	        String dono = caixa.getAttribute("dono");
-	        caixas[l][c] = dono.isEmpty() ? ' ' : dono.charAt(0);
-	    }
+		// 3. LER AS CAIXAS (Se existirem)
+		NodeList caixaNodes = tabuleiro.getElementsByTagName("caixa");
+		for (int i = 0; i < caixaNodes.getLength(); i++) {
+			Element caixa = (Element) caixaNodes.item(i);
+			
+			String strL = caixa.getAttribute("linha");
+			String strC = caixa.getAttribute("coluna");
+			
+			if (strL == null || strL.isEmpty() || strC == null || strC.isEmpty()) continue;
+			
+			int l = Integer.parseInt(strL);
+			int c = Integer.parseInt(strC);
+			String dono = caixa.getAttribute("dono");
+			
+			caixas[l][c] = (dono == null || dono.isEmpty()) ? ' ' : dono.charAt(0);
+		}
 
-	    StringBuilder sb = new StringBuilder();
-	    int numero = 1;
+		// 4. DESENHAR O TABULEIRO
+		StringBuilder sb = new StringBuilder();
+		int numero = 1;
 
-	    for (int i = 0; i < pontosLinhas; i++) {
-	        sb.append("•");
-	        for (int j = 0; j < pontosColunas - 1; j++) {
-	            if (hLine[i][j]) {
-	                sb.append("---");
-	            } else {
-	                sb.append(String.format("%3d", numero));
-	            }
-	            sb.append("•");
-	            numero++;
-	        }
-	        sb.append("\n");
+		for (int i = 0; i < pontosLinhas; i++) {
+			sb.append("•");
+			for (int j = 0; j < pontosColunas - 1; j++) {
+				if (hLine[i][j]) {
+					sb.append("---");
+				} else {
+					sb.append(String.format("%3d", numero));
+				}
+				sb.append("•");
+				numero++;
+			}
+			sb.append("\n");
 
-	        if (i < pontosLinhas - 1) {
-	            for (int j = 0; j < pontosColunas; j++) {
-	                if (vLine[i][j]) {
-	                    sb.append(" | ");
-	                } else {
-	                    sb.append(String.format("%3d", numero));
-	                }
-	                if (j < pontosColunas - 1) {
-	                    sb.append(" ").append(caixas[i][j] == ' ' ? ' ' : caixas[i][j]).append(" ");
-	                }
-	                numero++;
-	            }
-	            sb.append("\n");
-	        }
-	    }
+			if (i < pontosLinhas - 1) {
+				for (int j = 0; j < pontosColunas; j++) {
+					if (vLine[i][j]) {
+						sb.append(" | ");
+					} else {
+						sb.append(String.format("%3d", numero));
+					}
+					if (j < pontosColunas - 1) {
+						sb.append(" ").append(caixas[i][j] == '\0' || caixas[i][j] == ' ' ? ' ' : caixas[i][j]).append(" ");
+					}
+					numero++;
+				}
+				sb.append("\n");
+			}
+		}
 
-	    sb.append("\nLegenda: Números correspondem às linhas não ocupadas.\n");
-	    sb.append("Linha ocupada = '-' ou '|' ; Caixa fechada = X/O\n");
-	    sb.append("Jogador X e jogador O fecham caixas quando completam quatro lados.\n");
+		sb.append("\nLegenda: Números correspondem às linhas não ocupadas.\n");
+		sb.append("Linha ocupada = '-' ou '|' ; Caixa fechada = X/O\n");
+		sb.append("Jogador X e jogador O fecham caixas quando completam quatro lados.\n");
 
-	    return sb.toString();
+		return sb.toString();
 	}
 
 	/**

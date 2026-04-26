@@ -159,7 +159,7 @@
                     <xs:attribute name="tipo" type="xs:string" />
                     <xs:attribute name="linha" type="xs:integer" />
                     <xs:attribute name="coluna" type="xs:integer" />
-                    <xs:attribute name="marcada" type="xs:string" />
+                    <xs:attribute name="ocupada" type="xs:string" />
                 </xs:complexType>
             </xs:element>
             <xs:element name="caixa" maxOccurs="unbounded" minOccurs="0">

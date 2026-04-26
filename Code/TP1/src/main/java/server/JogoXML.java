@@ -27,7 +27,7 @@ public class JogoXML extends Jogo {
     public String tabuleiroToXML() {
         String tab = "<tabuleiro estado='" + estado + "'>";
         for (int i = 0; i < pontosLinhas; i++) {
-            for (int j = 0; j < pontosColunas; j++) {
+            for (int j = 0; j < pontosColunas - 1; j++) {
                 tab += "<linha tipo='Horizontal' linha='" + i + "' coluna='" + j + "' ocupada='" + linhasHorizontais[i][j] + "'/>";
             }
         }

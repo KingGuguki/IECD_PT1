@@ -123,11 +123,11 @@ public class Stub implements AutoCloseable {
 	        String tipo = linha.getAttribute("tipo");
 	        int l = Integer.parseInt(linha.getAttribute("linha"));
 	        int c = Integer.parseInt(linha.getAttribute("coluna"));
-	        boolean marcada = "S".equals(linha.getAttribute("marcada"));
+	        boolean ocupada = "S".equals(linha.getAttribute("ocupada"));
 	        if ("H".equals(tipo)) {
-	            hLine[l][c] = marcada;
+	            hLine[l][c] = ocupada;
 	        } else {
-	            vLine[l][c] = marcada;
+	            vLine[l][c] = ocupada;
 	        }
 	    }
 
@@ -172,8 +172,8 @@ public class Stub implements AutoCloseable {
 	        }
 	    }
 
-	    sb.append("\nLegenda: Números correspondem às linhas não marcadas.\n");
-	    sb.append("Linha marcada = '-' ou '|' ; Caixa fechada = X/O\n");
+	    sb.append("\nLegenda: Números correspondem às linhas não ocupadas.\n");
+	    sb.append("Linha ocupada = '-' ou '|' ; Caixa fechada = X/O\n");
 	    sb.append("Jogador X e jogador O fecham caixas quando completam quatro lados.\n");
 
 	    return sb.toString();

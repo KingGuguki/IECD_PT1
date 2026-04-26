@@ -85,7 +85,7 @@
 		</xs:annotation>
 		<xs:restriction base="xs:byte">
 			<xs:minInclusive value="1" />
-			<xs:maxInclusive value="9" />
+			<xs:maxInclusive value="12" />
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:simpleType name="simboloType">
@@ -135,6 +135,7 @@
 			<xs:enumeration value="EM" />
 			<xs:enumeration value="IV" />
 			<xs:enumeration value="ND" />
+			<xs:enumeration value = "BN" />
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:complexType name="casaType">
@@ -150,8 +151,21 @@
 	</xs:complexType>
 	<xs:complexType name="tabuleiroType">
 		<xs:sequence>
-			<xs:element type="casaType" name="casa" maxOccurs="9"
-				minOccurs="9">
+			<xs:element name="Linha" maxOccurs="999" minOccurs = "0">
+				<xs:complexType>
+                    <xs:attribute name="tipo" type="xs:string" />
+                    <xs:attribute name="linha" type="xs:integer" />
+                    <xs:attribute name="coluna" type="xs:integer" />
+                    <xs:attribute name="ocupada" type="xs:string" />
+                </xs:complexType>
+			</xs:element>
+			<xs:element name="caixa" maxOccurs="unbounded" minOccurs="0">
+                <xs:complexType>
+                    <xs:attribute name="linha" type="xs:integer" />
+        			<xs:attribute name="coluna" type="xs:integer" />
+        			<xs:attribute name="dono" type="xs:string" />
+                </xs:complexType>
+            </xs:element>
 				<xs:annotation>
 					<xs:documentation>Elemento que representa uma casa no tabuleiro.
 					</xs:documentation>

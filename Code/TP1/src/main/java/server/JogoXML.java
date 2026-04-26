@@ -15,6 +15,7 @@ public class JogoXML extends Jogo {
      * - "VX": Vitória do X.
      * - "VO": Vitória do O.
      * - "EM": Empate.
+     * - "BN": Jogada Bonus.
      */
     private String estado = "ND";
 
@@ -25,20 +26,28 @@ public class JogoXML extends Jogo {
      */
     public String tabuleiroToXML() {
         String tab = "<tabuleiro estado='" + estado + "'>";
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                tab += "<casa simbolo='" + tabuleiro[i][j] + "'/>";
+        for (int i = 0; i < pontosLinhas; i++) {
+            for (int j = 0; j < pontosColunas; j++) {
+                tab += "<linha tipo='Horizontal' linha='" + i + "' coluna='" + j + "' ocupada='" + linhasHorizontais[i][j] + "'/>";
             }
         }
+        for (int i = 0; i < pontosLinhas - 1; i++) {
+            for (int j = 0; j < pontosColunas; j++) {
+                tab += "<linha tipo='Vertical' linha='" + i + "' coluna='" + j + "' ocupada='" + linhasVerticais[i][j] + "'/>";
+            }
+        }
+        for (int i = 0; i < pontosLinhas - 1; i++) {
+            for (int j = 0; j < pontosColunas - 1; j++) {
+                tab += "<caixa dono='" + caixas[i][j] + "'/>";
+            }
+        }
+
         return tab += "</tabuleiro>";
     }
 
     /**
      * Concretiza a jogada e atualiza o estado do jogo.
      *
-     * @param 		numero  Número da casa (entre 1 e 9).
-     * @param 		simbolo Símbolo do jogador ('X' ou 'O').
-     * @return 		true se a jogada é válida, false caso contrário.
      */
 	public boolean joga(short numero, char simbolo) {
 		estado = "ND"; // Nada a registar, continua o jogo.
@@ -48,19 +57,30 @@ public class JogoXML extends Jogo {
 			estado = "IV"; // Jogada inválida.
 			return false;
 		}
-
-		// Verifica se há vitória.
-		if (vitoria('X'))
-			estado = "VX"; // Vitória do X.
-		else if (vitoria('O'))
-			estado = "VO"; // Vitória do O.
-
-			// Verifica se há empate.
-			else if (empate())
-				estado = "EM"; // Empate.
+        if(super.ultimaJogadaFechouCaixa()){
+            if(super.terminou()){
+                definirVencedor();
+            } else{
+                estado = "BN";
+            }
+        } else{
+            if(super.terminou()){
+                definirVencedor();
+            }
+        }
 
 		return true;
 	}
+
+    private void definirVencedor() {
+        if (super.empate()) {
+            estado = "EM";
+        } else if (super.vitoria('X')) {
+            estado = "VX";
+        } else if (super.vitoria('O')) {
+            estado = "VO";
+        }
+    }
 
     /**
      * Indica se o jogo terminou com base no estado atual.
@@ -69,5 +89,9 @@ public class JogoXML extends Jogo {
      */
     public boolean terminou() {
         return !estado.equals("ND") && !estado.equals("IV");
+    }
+
+    public String getEstado(){
+        return estado;
     }
 }

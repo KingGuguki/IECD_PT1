@@ -120,24 +120,24 @@ public class Stub implements AutoCloseable {
 	    NodeList linhaNodes = tabuleiro.getElementsByTagName("linha");
 	    for (int i = 0; i < linhaNodes.getLength(); i++) {
 	        Element linha = (Element) linhaNodes.item(i);
-	        String orientacao = linha.getAttribute("orientacao");
-	        int li = Integer.parseInt(linha.getAttribute("linha"));
-	        int co = Integer.parseInt(linha.getAttribute("coluna"));
+	        String tipo = linha.getAttribute("tipo");
+	        int l = Integer.parseInt(linha.getAttribute("linha"));
+	        int c = Integer.parseInt(linha.getAttribute("coluna"));
 	        boolean marcada = "S".equals(linha.getAttribute("marcada"));
-	        if ("H".equals(orientacao)) {
-	            hLine[li][co] = marcada;
+	        if ("H".equals(tipo)) {
+	            hLine[l][c] = marcada;
 	        } else {
-	            vLine[li][co] = marcada;
+	            vLine[l][c] = marcada;
 	        }
 	    }
 
 	    NodeList caixaNodes = tabuleiro.getElementsByTagName("caixa");
 	    for (int i = 0; i < caixaNodes.getLength(); i++) {
 	        Element caixa = (Element) caixaNodes.item(i);
-	        int li = Integer.parseInt(caixa.getAttribute("linha"));
-	        int co = Integer.parseInt(caixa.getAttribute("coluna"));
+	        int l = Integer.parseInt(caixa.getAttribute("linha"));
+	        int c = Integer.parseInt(caixa.getAttribute("coluna"));
 	        String dono = caixa.getAttribute("dono");
-	        caixas[li][co] = dono.isEmpty() ? ' ' : dono.charAt(0);
+	        caixas[l][c] = dono.isEmpty() ? ' ' : dono.charAt(0);
 	    }
 
 	    StringBuilder sb = new StringBuilder();

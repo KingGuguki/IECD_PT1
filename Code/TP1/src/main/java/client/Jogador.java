@@ -56,7 +56,7 @@ public class Jogador {
                 // Lê o número curto.
                 numero = leitor.nextShort();
                 // Verifica se o número está entre 1 e 9.
-                if (numero < 0 || numero > 9) {
+                if (numero < 0 || numero > 12) {
                     // Mostra uma mensagem de erro.
                     System.out.println("Jogada inválida!");
                 } else {

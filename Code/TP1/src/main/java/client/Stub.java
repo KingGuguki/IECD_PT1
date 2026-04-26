@@ -72,52 +72,110 @@ public class Stub implements AutoCloseable {
 	 * @return String formatada para exibição na consola
 	 */
 	public String tabuleiroToTXT(final Element tabuleiro) {
-	    // 🧱 Usamos StringBuilder para uma construção de String mais eficiente e rápida
-	    StringBuilder sb = new StringBuilder();
-	    
-	    // 🗂️ Obtém a lista de todos os nós <casa> dentro do elemento tabuleiro
-	    NodeList casas = tabuleiro.getElementsByTagName("casa");
-	    
-	    int contador = 1; // 📍 Contador para identificar as quadrículas de 1 a 9
+	    NodeList linhas = tabuleiro.getElementsByTagName("linha");
+	    if (linhas.getLength() > 0) {
+	        return tabuleiroPontosCaixasToTXT(tabuleiro);
+	    }
 
-	    // 🔄 Ciclo para percorrer as 3 linhas do tabuleiro
+	    // Fallback para o antigo tabuleiro do galo.
+	    StringBuilder sb = new StringBuilder();
+	    NodeList casas = tabuleiro.getElementsByTagName("casa");
+	    int contador = 1;
+
 	    for (int i = 0; i < 3; i++) {
-	        // 🔄 Ciclo para percorrer as 3 colunas de cada linha
 	        for (int j = 0; j < 3; j++) {
-	            
-	            // 🔍 Extrai o atributo "simbolo" da casa correspondente ao índice atual
-	            // O índice na NodeList é (contador - 1) pois a lista começa em 0
 	            String attr = ((Element) casas.item(contador - 1)).getAttribute("simbolo");
 	            char simbolo = (attr.length() > 0) ? attr.charAt(0) : ' ';
 
-	            // 🎨 Lógica de conversão visual para emojis pesados
 	            if (simbolo == 'X') {
-	                sb.append(" ✖️ "); // Estilo semelhante ao emoji de multiplicação
+	                sb.append(" ✖️ ");
 	            } else if (simbolo == 'O') {
-	                sb.append(" ⭕ "); // Círculo vermelho oco para contraste
+	                sb.append(" ⭕ ");
 	            } else {
-	                // 🔢 Se a casa estiver vazia, mostra o seu número (1 a 9)
-	                // Os espaços extra garantem que o alinhamento se mantém com os emojis
 	                sb.append(" ").append(contador).append("  ");
 	            }
 
-	            // 📏 Adiciona a barra vertical separadora, exceto na última coluna
 	            if (j < 2) {
 	                sb.append("|");
 	            }
-	            
-	            contador++; // Próxima casa...
+	            contador++;
 	        }
-	        
-	        sb.append("\n"); // 📑 Salto de linha após completar uma fila
-	        
-	        // ➖ Adiciona a linha horizontal separadora entre as filas
+	        sb.append("\n");
 	        if (i < 2) {
 	            sb.append("------------\n");
 	        }
 	    }
-	    
-	    // ✨ Retorna o tabuleiro finalizado pronto a ser impresso
+
+	    return sb.toString();
+	}
+
+	private String tabuleiroPontosCaixasToTXT(final Element tabuleiro) {
+	    int pontosLinhas = Integer.parseInt(tabuleiro.getAttribute("linhas"));
+	    int pontosColunas = Integer.parseInt(tabuleiro.getAttribute("colunas"));
+	    int totalLinhas = pontosLinhas * (pontosColunas - 1) + (pontosLinhas - 1) * pontosColunas;
+	    boolean[][] hLine = new boolean[pontosLinhas][pontosColunas - 1];
+	    boolean[][] vLine = new boolean[pontosLinhas - 1][pontosColunas];
+	    char[][] caixas = new char[pontosLinhas - 1][pontosColunas - 1];
+
+	    NodeList linhaNodes = tabuleiro.getElementsByTagName("linha");
+	    for (int i = 0; i < linhaNodes.getLength(); i++) {
+	        Element linha = (Element) linhaNodes.item(i);
+	        String orientacao = linha.getAttribute("orientacao");
+	        int li = Integer.parseInt(linha.getAttribute("linha"));
+	        int co = Integer.parseInt(linha.getAttribute("coluna"));
+	        boolean marcada = "S".equals(linha.getAttribute("marcada"));
+	        if ("H".equals(orientacao)) {
+	            hLine[li][co] = marcada;
+	        } else {
+	            vLine[li][co] = marcada;
+	        }
+	    }
+
+	    NodeList caixaNodes = tabuleiro.getElementsByTagName("caixa");
+	    for (int i = 0; i < caixaNodes.getLength(); i++) {
+	        Element caixa = (Element) caixaNodes.item(i);
+	        int li = Integer.parseInt(caixa.getAttribute("linha"));
+	        int co = Integer.parseInt(caixa.getAttribute("coluna"));
+	        String dono = caixa.getAttribute("dono");
+	        caixas[li][co] = dono.isEmpty() ? ' ' : dono.charAt(0);
+	    }
+
+	    StringBuilder sb = new StringBuilder();
+	    int numero = 1;
+
+	    for (int i = 0; i < pontosLinhas; i++) {
+	        sb.append("•");
+	        for (int j = 0; j < pontosColunas - 1; j++) {
+	            if (hLine[i][j]) {
+	                sb.append("---");
+	            } else {
+	                sb.append(String.format("%3d", numero));
+	            }
+	            sb.append("•");
+	            numero++;
+	        }
+	        sb.append("\n");
+
+	        if (i < pontosLinhas - 1) {
+	            for (int j = 0; j < pontosColunas; j++) {
+	                if (vLine[i][j]) {
+	                    sb.append(" | ");
+	                } else {
+	                    sb.append(String.format("%3d", numero));
+	                }
+	                if (j < pontosColunas - 1) {
+	                    sb.append(" ").append(caixas[i][j] == ' ' ? ' ' : caixas[i][j]).append(" ");
+	                }
+	                numero++;
+	            }
+	            sb.append("\n");
+	        }
+	    }
+
+	    sb.append("\nLegenda: Números correspondem às linhas não marcadas.\n");
+	    sb.append("Linha marcada = '-' ou '|' ; Caixa fechada = X/O\n");
+	    sb.append("Jogador X e jogador O fecham caixas quando completam quatro lados.\n");
+
 	    return sb.toString();
 	}
 

@@ -1,97 +1,248 @@
 package server;
 
 /**
- * Classe que implementa as regras do Jogo da Galo.
+ * Classe que implementa as regras do jogo Pontos e Caixas.
+ * O tabuleiro é uma grelha de pontos conectados por linhas horizontais
  *
  * @author Engº Porfírio Filipe
  */
 public class Jogo {
 
-	/**
-	 * Tabuleiro do jogo da galo (3x3).
-	 */
-	protected char[][] tabuleiro = { { '1', '2', '3' }, { '4', '5', '6' }, { '7', '8', '9' } };
+	protected final int pontosLinhas;
+	protected final int pontosColunas;
+	protected final boolean[][] linhasHorizontais;
+	protected final boolean[][] linhasVerticais;
+	protected final char[][] caixas;
+
+	protected final int totalLinhas;
+	protected final int totalCaixas;
+	protected int linhasMarcadas = 0;
+	protected int caixasX = 0;
+	protected int caixasO = 0;
+	protected int ultimasCaixasFechadas = 0;
 
 	/**
-	 * Construtor sem argumentos que inicializa o tabuleiro com os números de 1 a 9.
+	 * Cria um jogo de Pontos e Caixas com 3x3 pontos (2x2 caixas).
 	 */
 	public Jogo() {
-
+		this(3, 3);
 	}
 
 	/**
-	 * Verifica se o jogador com o símbolo especificado venceu o jogo.
+	 * Cria um jogo de Pontos e Caixas com a grelha especificada.
 	 *
-	 * @param simbolo Símbolo do jogador.
-	 * @return true se o jogador venceu, false caso contrário.
+	 * @param pontosLinhas Número de pontos nas linhas.
+	 * @param pontosColunas Número de pontos nas colunas.
+	 */
+	public Jogo(final int pontosLinhas, final int pontosColunas) {
+		if (pontosLinhas < 2 || pontosColunas < 2) {
+			throw new IllegalArgumentException("O tabuleiro deve ter pelo menos 2 pontos em cada dimensão.");
+		}
+
+		this.pontosLinhas = pontosLinhas;
+		this.pontosColunas = pontosColunas;
+		this.linhasHorizontais = new boolean[pontosLinhas][pontosColunas - 1];
+		this.linhasVerticais = new boolean[pontosLinhas - 1][pontosColunas];
+		this.caixas = new char[pontosLinhas - 1][pontosColunas - 1];
+
+		for (int i = 0; i < pontosLinhas - 1; i++) {
+			for (int j = 0; j < pontosColunas - 1; j++) {
+				caixas[i][j] = ' ';
+			}
+		}
+
+		this.totalLinhas = pontosLinhas * (pontosColunas - 1) + (pontosLinhas - 1) * pontosColunas;
+		this.totalCaixas = (pontosLinhas - 1) * (pontosColunas - 1);
+	}
+
+	/**
+	 * Obtém o número de pontos nas linhas.
+	 */
+	public int getPontosLinhas() {
+		return pontosLinhas;
+	}
+
+	/**
+	 * Obtém o número de pontos nas colunas.
+	 */
+	public int getPontosColunas() {
+		return pontosColunas;
+	}
+
+	/**
+	 * Obtém o total de linhas possíveis.
+	 */
+	public int getTotalLinhas() {
+		return totalLinhas;
+	}
+
+	/**
+	 * Obtém o total de caixas do tabuleiro.
+	 */
+	public int getTotalCaixas() {
+		return totalCaixas;
+	}
+
+	/**
+	 * Indica quantas caixas foram fechadas na última jogada.
+	 */
+	public int getUltimasCaixasFechadas() {
+		return ultimasCaixasFechadas;
+	}
+
+	/**
+	 * Indica se a última jogada fechou pelo menos uma caixa.
+	 */
+	public boolean ultimaJogadaFechouCaixa() {
+		return ultimasCaixasFechadas > 0;
+	}
+
+	/**
+	 * Obtem o número de caixas conquistadas pelo jogador.
+	 */
+	public int getScore(final char simbolo) {
+		if (simbolo == 'X') return caixasX;
+		if (simbolo == 'O') return caixasO;
+		return 0;
+	}
+
+	/**
+	 * Indica se o jogo terminou: não há mais linhas disponíveis.
+	 */
+	public boolean terminou() {
+		return linhasMarcadas >= totalLinhas;
+	}
+
+	/**
+	 * Indica se o jogo terminou empatado.
+	 */
+	public boolean empate() {
+		return terminou() && caixasX == caixasO;
+	}
+
+	/**
+	 * Indica se o jogador com o símbolo especificado venceu o jogo.
 	 */
 	public boolean vitoria(char simbolo) {
-		// Verifica linhas.
-		for (int i = 0; i < 3; i++) {
-			if (tabuleiro[i][0] == simbolo && tabuleiro[i][1] == simbolo && tabuleiro[i][2] == simbolo) {
-				return true;
-			}
+		if (!terminou()) {
+			return false;
 		}
-
-		// Verifica colunas.
-		for (int i = 0; i < 3; i++) {
-			if (tabuleiro[0][i] == simbolo && tabuleiro[1][i] == simbolo && tabuleiro[2][i] == simbolo) {
-				return true;
-			}
+		if (simbolo == 'X') {
+			return caixasX > caixasO;
 		}
-
-		// Verifica diagonais.
-		if (tabuleiro[0][0] == simbolo && tabuleiro[1][1] == simbolo && tabuleiro[2][2] == simbolo) {
-			return true;
+		if (simbolo == 'O') {
+			return caixasO > caixasX;
 		}
-		if (tabuleiro[0][2] == simbolo && tabuleiro[1][1] == simbolo && tabuleiro[2][0] == simbolo) {
-			return true;
-		}
-
 		return false;
 	}
 
 	/**
-	 * Determina um empate detetando se o tabuleiro está completo.
 	 *
-	 * @return true se existe empate, false caso contrário.
-	 */
-	public boolean empate() {
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				if (tabuleiro[i][j] != 'X' && tabuleiro[i][j] != 'O') {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Assinala a jogada 'simbolo' na casa assinala pelo 'numero'.
-	 *
-	 * @param numero  Identifica a casa da jogada (1..9).
-	 * @param simbolo Símbolo do jogador.
+	 * @param numero Identificador da linha.
+	 * @param simbolo Símbolo do jogador ('X' ou 'O').
 	 * @return true se a jogada é válida, false caso contrário.
 	 */
 	public boolean joga(short numero, char simbolo) {
-		// Valida o número da casa.
-		if (numero > 9 || numero < 1) {
-			return false; // salta a jogada
+		if (numero < 1 || numero > totalLinhas) {
+			return false;
 		}
 
-		// Converte o número da casa para índices na matriz.
-		numero--;
-		int linha = numero / 3;
-		int coluna = numero % 3;
+		int linha = 0;
+		int coluna = 0;
+		boolean horizontal = false;
+		int contador = 1;
 
-		// Verifica se a casa está disponível.
-		if (tabuleiro[linha][coluna] == 'X' || tabuleiro[linha][coluna] == 'O') {
-			return false; // casa ocupada
+		for (int i = 0; i < pontosLinhas; i++) {
+			for (int j = 0; j < pontosColunas - 1; j++) {
+				if (contador == numero) {
+					linha = i;
+					coluna = j;
+					horizontal = true;
+					break;
+				}
+				contador++;
+			}
+			if (horizontal || i == pontosLinhas - 1) {
+				break;
+			}
+			for (int j = 0; j < pontosColunas; j++) {
+				if (contador == numero) {
+					linha = i;
+					coluna = j;
+					horizontal = false;
+					break;
+				}
+				contador++;
+			}
+			if (!horizontal && contador > numero) {
+				break;
+			}
 		}
 
-		// Preenche a casa com o símbolo do jogador.
-		tabuleiro[linha][coluna] = simbolo;
+		int caixasFechadas = 0;
+
+		if (horizontal) {
+			if (linhasHorizontais[linha][coluna]) {
+				return false;
+			}
+			linhasHorizontais[linha][coluna] = true;
+			caixasFechadas = fecharCaixasPorLinhaHorizontal(linha, coluna, simbolo);
+		} else {
+			if (linhasVerticais[linha][coluna]) {
+				return false;
+			}
+			linhasVerticais[linha][coluna] = true;
+			caixasFechadas = fecharCaixasPorLinhaVertical(linha, coluna, simbolo);
+		}
+
+		linhasMarcadas++;
+		ultimasCaixasFechadas = caixasFechadas;
+
+		if (simbolo == 'X') {
+			caixasX += caixasFechadas;
+		} else if (simbolo == 'O') {
+			caixasO += caixasFechadas;
+		}
+
 		return true;
+	}
+
+	private int fecharCaixasPorLinhaHorizontal(int linha, int coluna, char simbolo) {
+		int fechadas = 0;
+		if (linha > 0) {
+			fechadas += fecharCaixa(linha - 1, coluna, simbolo);
+		}
+		if (linha < pontosLinhas - 1) {
+			fechadas += fecharCaixa(linha, coluna, simbolo);
+		}
+		return fechadas;
+	}
+
+	private int fecharCaixasPorLinhaVertical(int linha, int coluna, char simbolo) {
+		int fechadas = 0;
+		if (coluna > 0) {
+			fechadas += fecharCaixa(linha, coluna - 1, simbolo);
+		}
+		if (coluna < pontosColunas - 1) {
+			fechadas += fecharCaixa(linha, coluna, simbolo);
+		}
+		return fechadas;
+	}
+
+	private int fecharCaixa(int linha, int coluna, char simbolo) {
+		if (caixas[linha][coluna] != ' ') {
+			return 0;
+		}
+
+		boolean topo = linhasHorizontais[linha][coluna];
+		boolean fundo = linhasHorizontais[linha + 1][coluna];
+		boolean esquerda = linhasVerticais[linha][coluna];
+		boolean direita = linhasVerticais[linha][coluna + 1];
+
+		if (topo && fundo && esquerda && direita) {
+			caixas[linha][coluna] = simbolo;
+			return 1;
+		}
+		return 0;
 	}
 }

@@ -25,24 +25,38 @@ public class JogoXML extends Jogo {
      * @return String com XML que representa o tabuleiro.
      */
     public String tabuleiroToXML() {
-        String tab = "<tabuleiro estado='" + estado + "' >";
+        // Adicionamos os atributos 'linhas' e 'colunas' na raiz para o Stub não falhar
+        String tab = "<tabuleiro estado='" + estado + "' " +
+                     "linhas='" + pontosLinhas + "' " +
+                     "colunas='" + pontosColunas + "'>";
+
+        // Linhas Horizontais
         for (int i = 0; i < pontosLinhas; i++) {
             for (int j = 0; j < pontosColunas - 1; j++) {
-                tab += "<linha tipo='Horizontal' linha='" + i + "' coluna='" + j + "' ocupada='" + linhasHorizontais[i][j] + "'/>";
-            }
-        }
-        for (int i = 0; i < pontosLinhas - 1; i++) {
-            for (int j = 0; j < pontosColunas; j++) {
-                tab += "<linha tipo='Vertical' linha='" + i + "' coluna='" + j + "' ocupada='" + linhasVerticais[i][j] + "'/>";
-            }
-        }
-        for (int i = 0; i < pontosLinhas - 1; i++) {
-            for (int j = 0; j < pontosColunas - 1; j++) {
-                tab += "<caixa dono='" + caixas[i][j] + "'/>";
+                // Usamos "H" e "S"/"N" para bater com a lógica do Stub
+                String ocupada = linhasHorizontais[i][j] ? "S" : "N";
+                tab += "<linha tipo='H' linha='" + i + "' coluna='" + j + "' ocupada='" + ocupada + "'/>";
             }
         }
 
-        return tab += "</tabuleiro>";
+        // Linhas Verticais
+        for (int i = 0; i < pontosLinhas - 1; i++) {
+            for (int j = 0; j < pontosColunas; j++) {
+                String ocupada = linhasVerticais[i][j] ? "S" : "N";
+                tab += "<linha tipo='V' linha='" + i + "' coluna='" + j + "' ocupada='" + ocupada + "'/>";
+            }
+        }
+
+        // Caixas
+        for (int i = 0; i < pontosLinhas - 1; i++) {
+            for (int j = 0; j < pontosColunas - 1; j++) {
+                // Adicionamos linha e coluna explicitamente na tag caixa
+                tab += "<caixa linha='" + i + "' coluna='" + j + "' dono='" + caixas[i][j] + "'/>";
+            }
+        }
+
+        tab += "</tabuleiro>";
+        return tab;
     }
 
     /**

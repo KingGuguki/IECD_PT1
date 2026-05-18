@@ -144,13 +144,16 @@ public class Jogo {
 	}
 
 	/**
+	 * Concretiza a jogada e atualiza o estado do jogo.
 	 *
 	 * @param numero Identificador da linha.
 	 * @param simbolo Símbolo do jogador ('X' ou 'O').
 	 * @return true se a jogada é válida, false caso contrário.
 	 */
-	public boolean joga(short numero, char simbolo) {
-		if (numero < 1 || numero > totalLinhas) {
+	public boolean joga(short numero, char simbolo) 
+	{
+		if (numero < 1 || numero > totalLinhas) 
+		{
 			return false;
 		}
 
@@ -158,44 +161,59 @@ public class Jogo {
 		int coluna = 0;
 		boolean horizontal = false;
 		int contador = 1;
+		boolean encontrado = false;
 
-		for (int i = 0; i < pontosLinhas; i++) {
-			for (int j = 0; j < pontosColunas - 1; j++) {
-				if (contador == numero) {
+		for (int i = 0; i < pontosLinhas; i++) 
+		{
+			for (int j = 0; j < pontosColunas - 1; j++) 
+			{
+				if (contador == numero) 
+				{
 					linha = i;
 					coluna = j;
 					horizontal = true;
+					encontrado = true;
 					break;
 				}
 				contador++;
 			}
-			if (horizontal || i == pontosLinhas - 1) {
+			if (encontrado || i == pontosLinhas - 1) 
+			{
 				break;
 			}
-			for (int j = 0; j < pontosColunas; j++) {
-				if (contador == numero) {
+			for (int j = 0; j < pontosColunas; j++) 
+			{
+				if (contador == numero) 
+				{
 					linha = i;
 					coluna = j;
 					horizontal = false;
+					encontrado = true;
 					break;
 				}
 				contador++;
 			}
-			if (!horizontal && contador > numero) {
+			if (encontrado) 
+			{
 				break;
 			}
 		}
 
 		int caixasFechadas = 0;
 
-		if (horizontal) {
-			if (linhasHorizontais[linha][coluna]) {
+		if (horizontal) 
+		{
+			if (linhasHorizontais[linha][coluna]) 
+			{
 				return false;
 			}
 			linhasHorizontais[linha][coluna] = true;
 			caixasFechadas = fecharCaixasPorLinhaHorizontal(linha, coluna, simbolo);
-		} else {
-			if (linhasVerticais[linha][coluna]) {
+		} 
+		else 
+		{
+			if (linhasVerticais[linha][coluna]) 
+			{
 				return false;
 			}
 			linhasVerticais[linha][coluna] = true;
@@ -205,14 +223,13 @@ public class Jogo {
 		linhasMarcadas++;
 		ultimasCaixasFechadas = caixasFechadas;
 
-        // Alterado para incrementar as variáveis de pontuação de X e O
 		if (simbolo == 'X') 
 		{
-		    caixasX += caixasFechadas;
+			caixasX += caixasFechadas;
 		} 
 		else if (simbolo == 'O') 
 		{
-		    caixasO += caixasFechadas;
+			caixasO += caixasFechadas;
 		}
 
 		return true;

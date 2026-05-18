@@ -90,15 +90,17 @@ class ServidorDedicado extends Thread {
             char turnoAtual = 'X';
 
             // Ciclo para gerir a interação entre jogadores suportando a jogada Bónus
-            for(;;) 
+         // Ciclo para gerir a interação entre jogadores suportando a jogada Bónus
+            for (;;) 
             {
                 if (turnoAtual == 'X') 
                 {
                     Skeleton.runObter(isX, osX, 'X', connectionX, jogo);
                     
-                    if(!jogo.terminou()) 
+                    if (!jogo.terminou()) 
                     {
                         jogo = Skeleton.runJogar(isX, osX, 'X', connectionX, jogo);
+                        
                         // Se não for jogada bónus (BN) nem inválida (IV), passa a vez
                         if (jogo.getEstado().equals("ND")) 
                         {
@@ -108,15 +110,17 @@ class ServidorDedicado extends Thread {
                     else 
                     {
                         Skeleton.runObter(isO, osO, 'O', connectionO, jogo);
+                        break;
                     }
                 } 
                 else 
                 {
                     Skeleton.runObter(isO, osO, 'O', connectionO, jogo);
                     
-                    if(!jogo.terminou()) 
+                    if (!jogo.terminou()) 
                     {
                         jogo = Skeleton.runJogar(isO, osO, 'O', connectionO, jogo);
+                        
                         // Se não for jogada bónus (BN) nem inválida (IV), passa a vez
                         if (jogo.getEstado().equals("ND")) 
                         {
@@ -126,6 +130,7 @@ class ServidorDedicado extends Thread {
                     else 
                     {
                         Skeleton.runObter(isX, osX, 'X', connectionX, jogo);
+                        break;
                     }
                 }
             }

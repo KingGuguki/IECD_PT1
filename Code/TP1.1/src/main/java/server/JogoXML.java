@@ -5,17 +5,11 @@ package server;
  *
  * @author Engº Porfírio Filipe
  */
-public class JogoXML extends Jogo {
+public class JogoXML extends Jogo 
+{
 
     /**
      * Estado do jogo após a última jogada.
-     * Possíveis valores:
-     * - "ND": Nada a registar, continua o jogo.
-     * - "IV": Jogada inválida.
-     * - "VX": Vitória do X.
-     * - "VO": Vitória do O.
-     * - "EM": Empate.
-     * - "BN": Jogada Bonus.
      */
     private String estado = "ND";
 
@@ -24,47 +18,70 @@ public class JogoXML extends Jogo {
      *
      * @return String com XML que representa o tabuleiro.
      */
-    public String tabuleiroToXML() {
-        String tab = "<tabuleiro estado='" + estado + "' >";
-        for (int i = 0; i < pontosLinhas; i++) {
-            for (int j = 0; j < pontosColunas - 1; j++) {
+    public String tabuleiroToXML() 
+    {
+        String tab = "<tabuleiro estado='" + estado + "' linhas='" + pontosLinhas + "' colunas='" + pontosColunas + "' >";
+        
+        for (int i = 0; i < pontosLinhas; i++) 
+        {
+            for (int j = 0; j < pontosColunas - 1; j++) 
+            {
                 tab += "<linha tipo='H' linha='" + i + "' coluna='" + j + "' ocupada='" + linhasHorizontais[i][j] + "'/>";
             }
         }
-        for (int i = 0; i < pontosLinhas - 1; i++) {
-            for (int j = 0; j < pontosColunas; j++) {
+        for (int i = 0; i < pontosLinhas - 1; i++) 
+        {
+            for (int j = 0; j < pontosColunas; j++) 
+            {
                 tab += "<linha tipo='V' linha='" + i + "' coluna='" + j + "' ocupada='" + linhasVerticais[i][j] + "'/>";
             }
         }
-        for (int i = 0; i < pontosLinhas - 1; i++) {
-            for (int j = 0; j < pontosColunas - 1; j++) {
-                tab += "<caixa dono='" + caixas[i][j] + "'/>";
+        for (int i = 0; i < pontosLinhas - 1; i++) 
+        {
+            for (int j = 0; j < pontosColunas - 1; j++) 
+            {
+                tab += "<caixa linha='" + i + "' coluna='" + j + "' dono='" + caixas[i][j] + "'/>";
             }
         }
 
-        return tab += "</tabuleiro>";
+        tab += "</tabuleiro>";
+
+        if (estado.equals("BN") || estado.equals("IV")) 
+        {
+            estado = "ND";
+        }
+
+        return tab;
     }
 
     /**
      * Concretiza a jogada e atualiza o estado do jogo.
-     *
      */
-	public boolean joga(short numero, char simbolo) {
-		estado = "ND"; // Nada a registar, continua o jogo.
+	public boolean joga(short numero, char simbolo) 
+	{
+		estado = "ND"; 
 
-		// Verifica se a jogada é válida no jogo base.
-		if (!super.joga(numero, simbolo)) {
-			estado = "IV"; // Jogada inválida.
+		if (!super.joga(numero, simbolo)) 
+		{
+			estado = "IV"; 
 			return false;
 		}
-        if(super.ultimaJogadaFechouCaixa()){
-            if(super.terminou()){
+		
+        if (super.ultimaJogadaFechouCaixa()) 
+        {
+            if (super.terminou()) 
+            {
                 definirVencedor();
-            } else{
+            } 
+            else 
+            {
                 estado = "BN";
             }
-        } else{
-            if(super.terminou()){
+        } 
+        else 
+        {
+            if (super.terminou()) 
+            {
                 definirVencedor();
             }
         }
@@ -78,7 +95,6 @@ public class JogoXML extends Jogo {
 	    {
 	        estado = "EM";
 	    } 
-        // Alterado de '1' e '2' de volta para 'X' e 'O'
 	    else if (super.vitoria('X')) 
 	    {
 	        estado = "VX";
@@ -89,16 +105,14 @@ public class JogoXML extends Jogo {
 	    }
 	}
 
-    /**
-     * Indica se o jogo terminou com base no estado atual.
-     *
-     * @return true se o jogo terminou, false caso contrário.
-     */
-    public boolean terminou() {
-        return !estado.equals("ND") && !estado.equals("IV");
+    @Override
+    public boolean terminou() 
+    {
+        return super.terminou();
     }
 
-    public String getEstado(){
+    public String getEstado() 
+    {
         return estado;
     }
 }

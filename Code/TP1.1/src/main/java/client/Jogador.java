@@ -42,26 +42,29 @@ public class Jogador {
      * Lê um número curto da entrada do utilizador.
      *
      * @param 	leitor Scanner para ler a entrada do utilizador.
-     * @return 	Número curto válido (entre 1 e 9).
+     * @return 	Número curto válido (entre 1 e 12).
      */
-    private static short readShort(Scanner leitor) {
-        short numero = 0; // Variável para armazenar o número lido.
-        // Loop para garantir que um número válido é lido.
-        while (true) {
-            // Verifica se o próximo token na entrada é um número curto.
-            if (leitor.hasNextShort()) {
-                // Lê o número curto.
+    private static short readShort(Scanner leitor) 
+    {
+        short numero = 0; 
+        
+        while (true) 
+        {
+            if (leitor.hasNextShort()) 
+            {
                 numero = leitor.nextShort();
-                // Verifica se o número está entre 1 e 9.
-                if (numero < 0 || numero > 12) {
-                    // Mostra uma mensagem de erro.
+                
+                if (numero < 1 || numero > 12) 
+                {
                     System.out.println("Jogada inválida!");
-                } else {
-                    // Retorna o número lido.
+                } 
+                else 
+                {
                     return numero;
                 }
-            } else {
-                // Ignora a linha atual da entrada.
+            } 
+            else 
+            {
                 leitor.nextLine();
             }
         }
@@ -78,6 +81,153 @@ public class Jogador {
 	      }
 	      return senha;
 	  }
+	  
+	  /**
+	     * Captura a jogada com base nos pontos de início e fim e realiza validações detalhadas das regras.
+	     * Repete o pedido até uma jogada em conformidade ser inserida.
+	     */
+	    private static short readMoveFromDots(Scanner leitor, int pontosLinhas, int pontosColunas) 
+	    {
+	        int totalDots = pontosLinhas * pontosColunas;
+	        
+	        while (true) 
+	        {
+	            String linhaInput = leitor.nextLine().trim();
+	            
+	            if (linhaInput.isEmpty()) 
+	            {
+	                continue;
+	            }
+	            
+	            String[] partes = linhaInput.split("\\s+");
+	            
+	            if (partes.length != 2) 
+	            {
+	                System.out.println("Jogada inválida! Deve introduzir exatamente dois números (ponto de início e ponto de fim).");
+	                System.out.print("Tente novamente: ");
+	                continue;
+	            }
+	            
+	            int p1, p2;
+	            
+	            try 
+	            {
+	                p1 = Integer.parseInt(partes[0]);
+	                p2 = Integer.parseInt(partes[1]);
+	            } 
+	            catch (NumberFormatException e) 
+	            {
+	                System.out.println("Jogada inválida! Os pontos devem ser números inteiros.");
+	                System.out.print("Tente novamente: ");
+	                continue;
+	            }
+	            
+	            if (p1 < 1 || p1 > totalDots || p2 < 1 || p2 > totalDots) 
+	            {
+	                System.out.println("Jogada inválida! Os pontos devem estar entre 1 e " + totalDots + ".");
+	                System.out.print("Tente novamente: ");
+	                continue;
+	            }
+	            
+	            if (p1 == p2) 
+	            {
+	                System.out.println("Jogada inválida! O ponto de início não pode ser igual ao ponto de fim.");
+	                System.out.print("Tente novamente: ");
+	                continue;
+	            }
+	            
+	            // Converter identificadores de pontos para coordenadas bidimensionais (0-indexed)
+	            int r1 = (p1 - 1) / pontosColunas;
+	            int c1 = (p1 - 1) % pontosColunas;
+	            int r2 = (p2 - 1) / pontosColunas;
+	            int c2 = (p2 - 1) % pontosColunas;
+	            
+	            // Validação de movimentos diagonais
+	            if (r1 != r2 && c1 != c2) 
+	            {
+	                System.out.println("Jogada inválida! Não são permitidas jogadas na diagonal (Ex: 4 2).");
+	                System.out.print("Tente novamente: ");
+	                continue;
+	            }
+	            
+	            // Validação de distância maior que 1 segmento de reta (ex: saltar múltiplos pontos)
+	            if (Math.abs(r1 - r2) > 1 || Math.abs(c1 - c2) > 1) 
+	            {
+	                System.out.println("Jogada inválida! Não pode efetuar uma jogada com distância superior a 1 segmento (Ex: 8 10).");
+	                System.out.print("Tente novamente: ");
+	                continue;
+	            }
+	            
+	            // Mapear par de coordenadas ordenadas para o ID sequencial de linha do servidor
+	            short linhaJogo = convertDotsToLineNumber(r1, c1, r2, c2, pontosLinhas, pontosColunas);
+	            
+	            if (linhaJogo == -1) 
+	            {
+	                System.out.println("Jogada inválida! Erro ao mapear os pontos para uma linha válida.");
+	                System.out.print("Tente novamente: ");
+	                continue;
+	            }
+	            
+	            return linhaJogo;
+	        }
+	    }
+
+	    /**
+	     * Traduz os pontos validados do cliente para o identificador numérico sequencial esperado pelo servidor.
+	     */
+	    private static short convertDotsToLineNumber(int r1, int c1, int r2, int c2, int pontosLinhas, int pontosColunas) 
+	    {
+	        int targetRow = -1;
+	        int targetCol = -1;
+	        boolean isHorizontal = false;
+
+	        if (r1 == r2 && Math.abs(c1 - c2) == 1) 
+	        {
+	            targetRow = r1;
+	            targetCol = Math.min(c1, c2);
+	            isHorizontal = true;
+	        } 
+	        else if (c1 == c2 && Math.abs(r1 - r2) == 1) 
+	        {
+	            targetRow = Math.min(r1, r2);
+	            targetCol = c1;
+	            isHorizontal = false;
+	        } 
+	        else 
+	        {
+	            return -1;
+	        }
+
+	        short contador = 1;
+	        
+	        for (int i = 0; i < pontosLinhas; i++) 
+	        {
+	            for (int j = 0; j < pontosColunas - 1; j++) 
+	            {
+	                if (isHorizontal && i == targetRow && j == targetCol) 
+	                {
+	                    return contador;
+	                }
+	                contador++;
+	            }
+	            
+	            if (i == pontosLinhas - 1) 
+	            {
+	                break;
+	            }
+	            
+	            for (int j = 0; j < pontosColunas; j++) 
+	            {
+	                if (!isHorizontal && i == targetRow && j == targetCol) 
+	                {
+	                    return contador;
+	                }
+	                contador++;
+	            }
+	        }
+	        
+	        return -1;
+	    }
                                   
     /**
      * Método principal do programa ClienteTCP.
@@ -171,7 +321,9 @@ public class Jogador {
             }
             
             // Loop do jogo, enquanto não for o fim do jogo (estado != "ND")
-            for(;;) {
+         // Loop do jogo, enquanto não for o fim do jogo (estado != "ND")
+            for(;;) 
+            {
                 // Mostra o tabuleiro atual.
                 Element tab = stub.obter();
                 System.out.println(stub.tabuleiroPontosCaixasToTXT(tab));
@@ -187,14 +339,10 @@ public class Jogador {
                         break;
                     }
                 }
-                LocalDateTime inicio = LocalDateTime.now();
                 
-                // Pede ao jogador para fazer uma jogada.
-                System.out.print("Joga " + simbolo + ": ");
-
-                // Lê a jogada do jogador.
-                short jogada = readShort(leitor);
-                // System.out.println(XMLDoc.tempoDif(inicio)); // (Opcional, mede tempo)
+                // Pede ao jogador para fazer uma jogada informando o ponto inicial e final.
+                System.out.print("Joga " + simbolo + " - Introduza o ponto inicial e final (ex: 1 2): ");
+                short jogada = readMoveFromDots(leitor, 3, 3);
                 
                 // Envia jogada para o servidor.
                 stub.jogar(jogada);

@@ -8,6 +8,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -26,6 +28,23 @@ import util.XMLDoc;
  * @author Engº Porfírio Filipe
  */
 public class Skeleton {
+    private static final Map<Socket, String> socketToUsername = new ConcurrentHashMap<>();
+
+    public static void registarSocketUtilizador(Socket sk, String username) {
+        if (sk != null && username != null && !username.isBlank()) {
+            socketToUsername.put(sk, username);
+        }
+    }
+
+    public static String obterSocketUtilizador(Socket sk) {
+        return socketToUsername.get(sk);
+    }
+
+    public static void limparSocketUtilizador(Socket sk) {
+        if (sk != null) {
+            socketToUsername.remove(sk);
+        }
+    }
     // **Métodos:**
 
     /**
@@ -54,7 +73,7 @@ public class Skeleton {
         return d;
     }
     
-    public static User runEntrada(Socket sk, char simbolo) throws Exception {
+    public static boolean runEntrada(Socket sk, char simbolo) throws Exception {
         BufferedReader is = new BufferedReader(new InputStreamReader(sk.getInputStream()));
         PrintWriter os = new PrintWriter(sk.getOutputStream(), true);
         
@@ -76,8 +95,9 @@ public class Skeleton {
             Node cloneElement = x.importNode(jogador, true);
             x.getElementsByTagName("iniciar").item(0).appendChild(cloneElement);
             
+            registarSocketUtilizador(sk, Nome);
             os.println(XMLDoc.documentToString(x));
-            return jg;
+            return true;
         } 
         // Verifica se a mensagem tem a tag <registar>
         else if (x.getElementsByTagName("registar").getLength() > 0) {
@@ -108,8 +128,31 @@ public class Skeleton {
             
             // 6. Enviar o XML final de volta para o Stub
             String msgResposta = XMLDoc.documentToString(respostaDoc);
+            registarSocketUtilizador(sk, nick);
             os.println(msgResposta);
-            return jg;
+            return true;
+        } 
+        // Pedido de atualização de perfil (não entra na fila de jogo)
+        else if (x.getElementsByTagName("atualizar_perfil").getLength() > 0) {
+            System.out.println("   -> Recebido pedido de ATUALIZAÇÃO DE PERFIL...");
+
+            Element req = getMethod(x, "atualizar_perfil");
+            String nick = req.getAttribute("nickname");
+            String novaFoto = req.getAttribute("foto");
+
+            User user = User.getByUserName(nick);
+            if (user == null) {
+                throw new Exception("Não foi possível atualizar a fotografia do utilizador '" + nick + "'.");
+            }
+            if (!user.setPhotography(novaFoto)) {
+                throw new Exception("Fotografia inválida para o utilizador '" + nick + "'.");
+            }
+            User._replace(user);
+            User._load();
+
+            // Responde com a própria estrutura válida no metodos-cli.xsd
+            os.println(XMLDoc.documentToString(x));
+            return false;
         } 
         else {
             throw new Exception("Operação de entrada desconhecida!");
@@ -205,9 +248,10 @@ public class Skeleton {
 
         // 3. Usar o método nativo do professor para atualizar o ficheiro!
         // Assumindo que o método retorna um boolean de sucesso
-        boolean sucesso = User._chgFoto(nick, novaFoto);
-        
-        if (sucesso) {
+        User user = User.getByUserName(nick);
+        if (user != null && user.setPhotography(novaFoto)) {
+            User._replace(user);
+            User._load();
             // Enviar uma mensagem de sucesso de volta ao cliente
             os.println("<metodo><resposta estado='OK'>Fotografia atualizada com sucesso!</resposta></metodo>");
         } else {

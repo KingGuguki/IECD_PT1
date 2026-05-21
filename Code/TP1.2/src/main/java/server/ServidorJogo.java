@@ -8,7 +8,19 @@ import java.net.Socket;
 
 import user.User;
 
-
+/**
+ * Classe `Accept` representa uma thread responsável por tratar a
+ * comunicação entre dois jogadores que interagem durante um jogo do galo.
+ * 
+ * Esta classe é responsável por:
+ * * Gerir a comunicação entre os jogadores X e O.
+ * * Ler e escrever dados nos sockets dos jogadores.
+ * * Controlar o fluxo do jogo, alternando entre jogadores.
+ * * Fechar os sockets quando o jogo termina.
+ * 
+ * @author Engº Porfírio Filipe
+ * 
+ */
 class ServidorDedicado extends Thread {
 
     // **Atributos:**
@@ -17,49 +29,71 @@ class ServidorDedicado extends Thread {
 	final int timeout = 1000*30;  // 0 - sem timeout
 
     /**
-     * Sessão da ligação com o jogador X.
+     * Socket da ligação com o jogador X.
      */
-    private Servidor.SessaoJogador jogadorX = null; 
+    private Socket connectionX = null; 
 
     /**
-     * Sessão da ligação com o jogador O.
+     * Socket da ligação com o jogador O.
      */
-    private Servidor.SessaoJogador jogadorO = null; 
+    private Socket connectionO = null; 
 
     // **Construtor:**
 
     /**
-     * Manipula as sessões virtuais dos jogadores.
+     * Manipula os circuitos virtuais dos jogadores.
      *
-     * @param sessao1 Sessão do jogador X.
-     * @param sessao2 Sessão do jogador O.
+     * @param connection1 Socket do jogador X.
+     * @param connection2 Socket do jogador O.
      */
-    public ServidorDedicado(Servidor.SessaoJogador sessao1, Servidor.SessaoJogador sessao2) {
-        this.jogadorX = sessao1;
-        this.jogadorO = sessao2;
+    public ServidorDedicado(Socket connection1, Socket connection2) {
+        this.connectionX = connection1;
+        this.connectionO = connection2;
+    }
+
+    private void atualizarEstatisticasFimJogo(JogoXML jogo) throws Exception {
+        String userX = Skeleton.obterSocketUtilizador(connectionX);
+        String userO = Skeleton.obterSocketUtilizador(connectionO);
+
+        if (userX == null || userO == null) {
+            return;
+        }
+
+        if (jogo.empate()) {
+            return;
+        }
+
+        if (jogo.vitoria('X')) {
+            User.registarResultadoJogo(userX, userO);
+        } else if (jogo.vitoria('O')) {
+            User.registarResultadoJogo(userO, userX);
+        }
     }
 
     /**
      * Método executado pela thread para gerir um jogo.
+     * 
+     * Este método é responsável por:
+     * * Criar streams de leitura e escrita para os sockets.
+     * * Iniciar o jogo.
+     * * Gerir o ciclo de jogadas entre os jogadores.
+     * * Fechar os sockets quando o jogo termina.
      */
     public void run() {
-        
-        // Regista o tempo inicial para calcular a duração do jogo
-        long tempoInicio = System.currentTimeMillis();
-
-        // Extrai os sockets das sessões para manter a lógica original de comunicação
-        Socket connectionX = jogadorX.socket;
-        Socket connectionO = jogadorO.socket;
 
         try (
             // Cria streams para leitura e escrita de dados nos sockets
         	
         	// **Socket X:**
+            // Stream para ler dados do socket X.
             BufferedReader isX = new BufferedReader(new InputStreamReader(connectionX.getInputStream()));
+            // Stream para escrever dados no socket X.
             PrintWriter osX = new PrintWriter(connectionX.getOutputStream(), true);
         	
         	// **Socket O:**
+            // Stream para ler dados do socket O.
             BufferedReader isO = new BufferedReader(new InputStreamReader(connectionO.getInputStream()));
+            // Stream para escrever dados no socket X.
             PrintWriter osO = new PrintWriter(connectionO.getOutputStream(), true);
         ) {
         	// Define timeout para inatvidade
@@ -67,13 +101,17 @@ class ServidorDedicado extends Thread {
         	connectionO.setSoTimeout(timeout);
         	
             // **Informação sobre a thread**
+
             System.out.println("Iniciou a Thread ("+ this.threadId()+") do servidor dedicado:");
 
             // **Criação do jogo**
+
+         // Cria uma nova instância do jogo.
             JogoXML jogo = new JogoXML();
             char turnoAtual = 'X';
 
             // Ciclo para gerir a interação entre jogadores suportando a jogada Bónus
+         // Ciclo para gerir a interação entre jogadores suportando a jogada Bónus
             for (;;) 
             {
                 if (turnoAtual == 'X') 
@@ -117,32 +155,14 @@ class ServidorDedicado extends Thread {
                     }
                 }
             }
-            
-            // --- CÓDIGO ADICIONADO PARA ESTATÍSTICAS ---
-            
-            long tempoFim = System.currentTimeMillis();
-            int tempoDecorridoSecs = (int) ((tempoFim - tempoInicio) / 1000);
 
-            // Obtém o estado final diretamente do jogo para decidir o vencedor
-            String estadoFinal = jogo.getEstado();
-            boolean vitX = estadoFinal.equals("VX");
-            boolean vitO = estadoFinal.equals("VO");
-            boolean derrotaX = estadoFinal.equals("VO");
-            boolean derrotaO = estadoFinal.equals("VX");
-
-            System.out.println("🏁 Jogo terminado! Atualizando base de dados (XML)...");
-            
-            // Atualiza estatísticas do Jogador X
-            User.registarResultadoJogo(jogadorX.user.getUsername(), vitX, derrotaX, tempoDecorridoSecs);
-            // Atualiza estatísticas do Jogador O
-            User.registarResultadoJogo(jogadorO.user.getUsername(), vitO, derrotaO, tempoDecorridoSecs);
-            
-            // -------------------------------------------
-
+            atualizarEstatisticasFimJogo(jogo);
 		} catch (Exception e) {
 			System.out.println("Servidor dedicado: terminou o jogo ("+e.getMessage()+")!");
 			// e.printStackTrace();
 		} finally {
+			Skeleton.limparSocketUtilizador(connectionX);
+			Skeleton.limparSocketUtilizador(connectionO);
 			// Garante que os sockets são fechados, mesmo em caso de exceção
 			try {
 				connectionX.close();

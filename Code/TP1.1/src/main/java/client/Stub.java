@@ -470,6 +470,25 @@ public class Stub implements AutoCloseable {
 		Document d = XMLDoc.parseString(resposta);  // consome a linha!
 		validXSD(d);
 	}
+
+	public void atualizarPerfil(String nick, String fotoBase64) throws Exception {
+	    os.println("<metodo><atualizar_perfil nickname='" + nick + "' foto='" + fotoBase64 + "'/></metodo>");
+
+	    String resposta = is.readLine();
+	    registaLog("Cliente{" + resposta + "}");
+
+	    if (resposta == null) {
+	        throw new Exception("Ligação ao servidor cancelada remotamente!");
+	    }
+
+	    Document d = XMLDoc.parseString(resposta);
+	    validXSD(d);
+
+	    NodeList respostas = d.getElementsByTagName("atualizar_perfil");
+	    if (respostas.getLength() != 1) {
+	        throw new Exception("Resposta inválida do servidor para atualização de perfil.");
+	    }
+	}
 	
 	public char registar(String nick, String pass, String foto, String nac, int idade) throws Exception {
 		// 1. Enviar a mensagem de registo para o servidor (conforme o teu novo XSD)

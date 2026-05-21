@@ -81,6 +81,17 @@ public class Jogador {
 	      }
 	      return senha;
 	  }
+
+	  private static String normalizarCaminhoFoto(String caminho) {
+	      if (caminho == null) {
+	          return "";
+	      }
+	      String texto = caminho.trim();
+	      if ((texto.startsWith("\"") && texto.endsWith("\"")) || (texto.startsWith("'") && texto.endsWith("'"))) {
+	          texto = texto.substring(1, texto.length() - 1).trim();
+	      }
+	      return texto;
+	  }
 	  
 	  /**
 	     * Captura a jogada com base nos pontos de início e fim e realiza validações detalhadas das regras.
@@ -277,7 +288,7 @@ public class Jogador {
                 // NOVA LÓGICA PARA A FOTOGRAFIA:
                 System.out.print("Indique o caminho COMPLETO para a sua fotografia");
                 System.out.print("(Ex: C:\\Users\\O_Teu_Nome\\Desktop\\foto.jpg ou /Users/Nome/foto.jpg): ");
-                String caminhoFoto = leitor.nextLine();
+                String caminhoFoto = normalizarCaminhoFoto(leitor.nextLine());
 
                 // Usamos a classe do professor para ler a imagem e gerar a Base64
                 util.MyImage img = new util.MyImage(caminhoFoto);
@@ -302,8 +313,51 @@ public class Jogador {
                 
                 String senha = leSenha("Indique a sua senha: ", leitor);
                
-                // Inicia a sessão com o servidor e obtém o símbolo do jogador.
-                simbolo = stub.iniciar(nome, senha);
+                // Menu pós-login: só entra em jogo quando o utilizador escolher jogar.
+                for (;;) {
+                    System.out.println();
+                    System.out.println("===== MENU =====");
+                    System.out.println("1 - Entrar em Jogo");
+                    System.out.println("2 - Definições de Perfil (Alterar fotografia)");
+                    System.out.println("0 - Sair");
+                    System.out.print("Opção: ");
+
+                    int opcaoMenu = leitor.nextInt();
+                    leitor.nextLine();
+
+                    if (opcaoMenu == 1) {
+                        // Só entra na fila e recebe símbolo quando escolher jogar.
+                        simbolo = stub.iniciar(nome, senha);
+                        break;
+                    }
+
+                    if (opcaoMenu == 2) {
+                        System.out.print("Indique o caminho COMPLETO para a nova fotografia: ");
+                        String caminhoFoto = normalizarCaminhoFoto(leitor.nextLine());
+
+                        util.MyImage img = new util.MyImage(caminhoFoto);
+                        if (!img.isOk()) {
+                            System.out.println("Erro: Não foi possível ler a imagem.");
+                            continue;
+                        }
+
+                        try (
+                            Socket socketPerfil = new Socket(host, port);
+                            Stub stubPerfil = new Stub(socketPerfil)
+                        ) {
+                            stubPerfil.atualizarPerfil(nome, img.getBase64());
+                            System.out.println("Fotografia de perfil atualizada com sucesso.");
+                        }
+                        continue;
+                    }
+
+                    if (opcaoMenu == 0) {
+                        System.out.println("A terminar sessão sem entrar em jogo...");
+                        return;
+                    }
+
+                    System.out.println("Opção inválida.");
+                }
             } else {
                 System.out.println("Opção inválida! A fechar o jogo...");
                 return;
@@ -315,7 +369,7 @@ public class Jogador {
             //stub.print(); // Opcional: imprimir dados do jogador
             System.out.println("Foi-lhe atribuído o identificador de jogador: " + simbolo);
             
-            if(simbolo == '2') 
+            if(simbolo == 'O') 
             {
                 System.out.println("À espera que o oponente jogue...");
             }

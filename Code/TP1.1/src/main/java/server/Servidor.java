@@ -121,13 +121,18 @@ public class Servidor {
                     char atribuido = proximoSimbolo;
                     
                     // 📞 Comunica ao cliente (via Skeleton) qual será o seu símbolo
-                    Skeleton.runEntrada(element, atribuido);
-                    
-                    // 📥 Coloca o socket na fila de espera para emparelhamento
-                    queue.put(element);
-                    
-                    // Alterado para alternar corretamente entre 'X' e 'O'
-                    proximoSimbolo = (atribuido == 'X' ? 'O' : 'X');
+                    boolean entrarEmJogo = Skeleton.runEntrada(element, atribuido);
+
+                    if (entrarEmJogo) {
+                        // 📥 Coloca o socket na fila de espera para emparelhamento
+                        queue.put(element);
+
+                        // Alterna símbolo apenas quando o cliente efetivamente vai para jogo
+                        proximoSimbolo = (atribuido == 'X' ? 'O' : 'X');
+                    } else {
+                        // Operações administrativas (ex: perfil) encerram aqui a ligação
+                        element.close();
+                    }
                     
                 } catch (Exception e) {
                     System.out.println("⚠️ Falha na inicialização do jogador: " + e.getMessage());

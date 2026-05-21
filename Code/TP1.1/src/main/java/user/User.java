@@ -1315,6 +1315,86 @@ public class User {
      * @param valor "true"-bloquear ou "false"-desbloquear
      * @throws XPathExpressionException em caso de erro
      */
+    private static Element getDirectChild(Element parent, String tagName) {
+	NodeList children = parent.getChildNodes();
+	for (int i = 0; i < children.getLength(); i++) {
+	    Node n = children.item(i);
+	    if (n.getNodeType() == Node.ELEMENT_NODE && tagName.equals(n.getNodeName())) {
+		return (Element) n;
+	    }
+	}
+	return null;
+    }
+
+    private static Element ensureChildAfter(Element parent, String tagName, String afterTagName) {
+	Element existing = getDirectChild(parent, tagName);
+	if (existing != null) {
+	    return existing;
+	}
+
+	Element novo = doc.createElement(tagName);
+	novo.setTextContent("0");
+
+	Element after = getDirectChild(parent, afterTagName);
+	if (after == null) {
+	    parent.appendChild(novo);
+	    return novo;
+	}
+
+	Node ref = after.getNextSibling();
+	while (ref != null && ref.getNodeType() != Node.ELEMENT_NODE) {
+	    ref = ref.getNextSibling();
+	}
+	if (ref == null) {
+	    parent.appendChild(novo);
+	} else {
+	    parent.insertBefore(novo, ref);
+	}
+	return novo;
+    }
+
+    private static int parseIntOrZero(String valor) {
+	try {
+	    return Integer.parseInt(valor.trim());
+	} catch (Exception e) {
+	    return 0;
+	}
+    }
+
+    private static boolean incrementarEstatistica(String username, String campo) throws XPathExpressionException {
+	NodeList us = XMLDoc.getXPath("/users/user[username/text()='" + username + "']", doc);
+	if (us.getLength() != 1) {
+	    return false;
+	}
+
+	Element user = (Element) us.item(0);
+	ensureChildAfter(user, "vitorias", "password");
+	ensureChildAfter(user, "derrotas", "vitorias");
+	ensureChildAfter(user, "tempo", "derrotas");
+
+	Element target = getDirectChild(user, campo);
+	if (target == null) {
+	    return false;
+	}
+	int atual = parseIntOrZero(target.getTextContent());
+	target.setTextContent(String.valueOf(atual + 1));
+	return true;
+    }
+
+    public static synchronized void registarResultadoJogo(String vencedor, String vencido) throws Exception {
+	boolean alterou = false;
+	if (vencedor != null && !vencedor.isBlank()) {
+	    alterou = incrementarEstatistica(vencedor, "vitorias") || alterou;
+	}
+	if (vencido != null && !vencido.isBlank()) {
+	    alterou = incrementarEstatistica(vencido, "derrotas") || alterou;
+	}
+	if (alterou) {
+	    _save();
+	    _load();
+	}
+    }
+
     public static void lock(String username, String valor) throws XPathExpressionException {
 	// Procura o nó "blocked" do utilizador
 	NodeList us = XMLDoc.getXPath("/users/user[username/text()='" + username + "']/blocked", doc);
@@ -1437,13 +1517,12 @@ public class User {
 	// - Verifica se existe apenas um elemento "users". Se não, há um erro na
 	// estrutura do documento.
 
-	// Verifica se o utilizador já existe (tamanho da NodeList us será 1)
+	// Se o utilizador existir, remove a versão antiga antes de inserir a atualizada.
 	if (us.getLength() == 1) {
-	    // Se o utilizador existir, remove o elemento "user" antigo do documento
 	    principal.removeChild(us.item(0));
-	} else
-	    // Adiciona o utilizador atual ao DOM
-	    user.toDocument();
+	}
+	// Garante que a versão atual do utilizador fica no DOM.
+	user.toDocument();
 	// Salva as alterações no disco.
 	_save();
     }

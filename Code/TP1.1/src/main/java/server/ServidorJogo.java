@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import user.User;
+
 /**
  * Classe `Accept` representa uma thread responsável por tratar a
  * comunicação entre dois jogadores que interagem durante um jogo do galo.
@@ -47,6 +49,25 @@ class ServidorDedicado extends Thread {
     public ServidorDedicado(Socket connection1, Socket connection2) {
         this.connectionX = connection1;
         this.connectionO = connection2;
+    }
+
+    private void atualizarEstatisticasFimJogo(JogoXML jogo) throws Exception {
+        String userX = Skeleton.obterSocketUtilizador(connectionX);
+        String userO = Skeleton.obterSocketUtilizador(connectionO);
+
+        if (userX == null || userO == null) {
+            return;
+        }
+
+        if (jogo.empate()) {
+            return;
+        }
+
+        if (jogo.vitoria('X')) {
+            User.registarResultadoJogo(userX, userO);
+        } else if (jogo.vitoria('O')) {
+            User.registarResultadoJogo(userO, userX);
+        }
     }
 
     /**
@@ -134,10 +155,14 @@ class ServidorDedicado extends Thread {
                     }
                 }
             }
+
+            atualizarEstatisticasFimJogo(jogo);
 		} catch (Exception e) {
 			System.out.println("Servidor dedicado: terminou o jogo ("+e.getMessage()+")!");
 			// e.printStackTrace();
 		} finally {
+			Skeleton.limparSocketUtilizador(connectionX);
+			Skeleton.limparSocketUtilizador(connectionO);
 			// Garante que os sockets são fechados, mesmo em caso de exceção
 			try {
 				connectionX.close();

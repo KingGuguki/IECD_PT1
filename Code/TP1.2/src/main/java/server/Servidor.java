@@ -6,8 +6,6 @@ import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import user.User;
-
 /**
  * 🕹️ Classe Servidor: Gere um jogo do galo multi-jogador usando TCP.
  * Atua como um "lobby" que emparelha jogadores e lança instâncias dedicadas.
@@ -47,8 +45,8 @@ public class Servidor {
          */
         new Thread(() -> { 
             for(;;) { 
-                SessaoJogador sk1 = null;
-                SessaoJogador sk2 = null;
+                Socket sk1 = null;
+                Socket sk2 = null;
                 try {
                     // 🛑 BLOQUEANTE: Espera que o Jogador 1 entre na fila
                     sk1 = fIFOJogador.remove();
@@ -101,50 +99,54 @@ public class Servidor {
             System.err.println("🚨 Erro crítico no Servidor: " + e.getLocalizedMessage());
         }
     }
-    
- // Adiciona logo a seguir ao 'private static boolean single = false;'
-    public static class SessaoJogador {
-        public Socket socket;
-        public User user;
-        
-        public SessaoJogador(Socket socket, User user) {
-            this.socket = socket;
-            this.user = user;
-        }
-        
-        
-    }
 
     /**
      * 🧵 Classe interna para gerir a fila de jogadores (First-In, First-Out).
      * Usa uma BlockingQueue para garantir segurança entre threads (Thread-Safe).
      */
     private final class FIFOJogador {
-    // Fila agora guarda SessaoJogador
-    private final BlockingQueue<SessaoJogador> queue = new LinkedBlockingQueue<>();
-    private char proximoSimbolo = 'X';
+        // 🧱 Fila que bloqueia a leitura se estiver vazia e a escrita se estiver cheia
+        private final BlockingQueue<Socket> queue = new LinkedBlockingQueue<>();
+        
+        // Alterado para iniciar com 'X' em vez de '1'
+        private char proximoSimbolo = 'X';
 
-    public synchronized void add(Socket element) throws InterruptedException {
-        new Thread(() -> {
-            try {
-                char atribuido = proximoSimbolo;
-                // Agora apanhamos o utilizador que faz o login!
-                User u = Skeleton.runEntrada(element, atribuido);
-                
-                // Colocamos o par (Socket + User) na fila
-                queue.put(new SessaoJogador(element, u));
-                
-                proximoSimbolo = (atribuido == 'X' ? 'O' : 'X');
-            } catch (Exception e) {
-                System.out.println("⚠️ Falha na inicialização do jogador: " + e.getMessage());
-                try { element.close(); } catch (IOException e1) {}
-            }
-        }).start();
-    }
+        /**
+         * 📥 Adiciona um jogador à fila e envia-lhe o seu símbolo.
+         */
+        public synchronized void add(Socket element) throws InterruptedException {
+            // 🚀 Lança uma tarefa curta para não bloquear o ciclo principal do servidor
+            new Thread(() -> {
+                try {
+                    char atribuido = proximoSimbolo;
+                    
+                    // 📞 Comunica ao cliente (via Skeleton) qual será o seu símbolo
+                    boolean entrarEmJogo = Skeleton.runEntrada(element, atribuido);
 
-    public SessaoJogador remove() throws InterruptedException {
-        return queue.take(); 
+                    if (entrarEmJogo) {
+                        // 📥 Coloca o socket na fila de espera para emparelhamento
+                        queue.put(element);
+
+                        // Alterna símbolo apenas quando o cliente efetivamente vai para jogo
+                        proximoSimbolo = (atribuido == 'X' ? 'O' : 'X');
+                    } else {
+                        // Operações administrativas (ex: perfil) encerram aqui a ligação
+                        element.close();
+                    }
+                    
+                } catch (Exception e) {
+                    System.out.println("⚠️ Falha na inicialização do jogador: " + e.getMessage());
+                    try { element.close(); } catch (IOException e1) {}
+                }
+            }).start();
+        }
+
+        /**
+         * 📤 Retira um jogador da fila. 
+         * @return O Socket do jogador. Se a fila estiver vazia, a thread "dorme" aqui.
+         */
+        public Socket remove() throws InterruptedException {
+            return queue.take(); // 🛑 Método estritamente bloqueante
+        }
     }
-}
-    
 }

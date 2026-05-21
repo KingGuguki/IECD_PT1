@@ -312,8 +312,12 @@ public class Jogador {
                 String nome = leitor.nextLine();
                 
                 String senha = leSenha("Indique a sua senha: ", leitor);
+
+                // Validação imediata das credenciais.
+                // Se falhar, não deve mostrar o menu.
+                simbolo = stub.iniciar(nome, senha);
                
-                // Menu pós-login: só entra em jogo quando o utilizador escolher jogar.
+                // Menu pós-autenticação.
                 for (;;) {
                     System.out.println();
                     System.out.println("===== MENU =====");
@@ -326,8 +330,7 @@ public class Jogador {
                     leitor.nextLine();
 
                     if (opcaoMenu == 1) {
-                        // Só entra na fila e recebe símbolo quando escolher jogar.
-                        simbolo = stub.iniciar(nome, senha);
+                        // Já autenticado com sucesso: segue para o jogo.
                         break;
                     }
 

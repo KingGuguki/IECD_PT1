@@ -45,6 +45,7 @@ import javax.xml.transform.OutputKeys;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
@@ -128,6 +129,8 @@ public class XMLDoc {
 	    {
 	        return null;
 	    }
+	    removerNosTextoEmBranco(xmlDoc);
+	    xmlDoc.normalizeDocument();
 	    Writer out = new StringWriter();
 	    Transformer tf = TransformerFactory.newInstance().newTransformer();
 
@@ -148,6 +151,18 @@ public class XMLDoc {
 
 	    tf.transform(new DOMSource(xmlDoc), new StreamResult(out));
 	    return out.toString();
+	}
+
+	private static void removerNosTextoEmBranco(Node node) {
+	    NodeList children = node.getChildNodes();
+	    for (int i = children.getLength() - 1; i >= 0; i--) {
+	        Node child = children.item(i);
+	        if (child.getNodeType() == Node.TEXT_NODE && child.getTextContent().trim().isEmpty()) {
+	            node.removeChild(child);
+	            continue;
+	        }
+	        removerNosTextoEmBranco(child);
+	    }
 	}
 
 	/**
@@ -331,13 +346,13 @@ public class XMLDoc {
 
 		// Abre o canal do ficheiro original para escrita
 		FileChannel fileChannel = FileChannel.open(Paths.get(ficheiroOriginal), StandardOpenOption.CREATE,
-				StandardOpenOption.WRITE);
+				StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
 
 		// Bloqueia o canal para escrita exclusiva
 		try (FileLock lock = fileChannel.lock()) { // faz unlock automaticamente
 
 			// Cria um buffer para armazenar a string como bytes
-			ByteBuffer byteBuffer = ByteBuffer.wrap(stXML.getBytes());
+			ByteBuffer byteBuffer = ByteBuffer.wrap(stXML.getBytes(StandardCharsets.UTF_8));
 
 			// Escreve o buffer no canal do ficheiro
 			while (byteBuffer.hasRemaining())
@@ -902,7 +917,7 @@ public class XMLDoc {
 	 */
 	public static void stringToFile(String str, String filename) throws IOException {
 		// Cria um novo FileWriter para o ficheiro especificado
-		FileWriter file = new FileWriter(filename);
+		FileWriter file = new FileWriter(filename, StandardCharsets.UTF_8);
 
 		// Escreve o conteúdo no ficheiro
 		file.write(str);

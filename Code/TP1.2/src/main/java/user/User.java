@@ -82,10 +82,6 @@ public class User {
     private Nationality nationality = null;
 
     static Scanner sc = new Scanner(System.in);
-    
-    private int vitorias = 0;
-    private int derrotas = 0;
-    private int tempo = 0; // em segundos
 
     static {
 	// Este bloco é executado quando a classe é carregada
@@ -158,15 +154,6 @@ public class User {
 	this.userId = userId;
 	return true;
     }
-    
-    public int getVitorias() { return vitorias; }
-    public void setVitorias(int vitorias) { this.vitorias = vitorias; }
-
-    public int getDerrotas() { return derrotas; }
-    public void setDerrotas(int derrotas) { this.derrotas = derrotas; }
-
-    public int getTempo() { return tempo; }
-    public void setTempo(int tempo) { this.tempo = tempo; }
 
     /**
      * @return Data da última atualização
@@ -698,229 +685,112 @@ public class User {
 	    getPhotography().view();
     }
 
-
+    /**
+     * Atualiza o DOM com os dados do utilizador atual
+     * 
+     * @throws ParserConfigurationException em caso de erro
+     */
     public void toDocument() throws ParserConfigurationException {
-        // 1. Criamos o contentor principal do utilizador: <user>
-        Element userElement = doc.createElement("user");
+	Element userElement = doc.createElement("user");
 
-        // 2. Preenchemos TODOS os elementos OBRIGATÓRIOS E OPCIONAIS dentro de userElement
-        Element aux = doc.createElement("userid");
-        aux.setTextContent(getUserId().toString());
-        userElement.appendChild(aux);
+	Element aux = doc.createElement("userid");
+	aux.setTextContent(getUserId().toString());
+	userElement.appendChild(aux);
 
-        aux = doc.createElement("updated");
-        aux.setTextContent(dateTimeToXsd(LocalDateTime.now())); 
-        userElement.appendChild(aux);
+	aux = doc.createElement("updated");
+	aux.setTextContent(dateTimeToXsd(LocalDateTime.now()));  //getUpdated()
+	userElement.appendChild(aux);
 
-        aux = doc.createElement("blocked");
-        aux.setTextContent(isBlocked() ? "true" : "false");
-        userElement.appendChild(aux);
+	aux = doc.createElement("blocked");
+	aux.setTextContent(isBlocked() ? "true" : "false");
+	userElement.appendChild(aux);
 
-        aux = doc.createElement("profile");
-        aux.setTextContent(String.valueOf(getProfile()));
-        userElement.appendChild(aux);
+	aux = doc.createElement("profile");
+	aux.setTextContent(String.valueOf(getProfile()));
+	userElement.appendChild(aux);
 
-        aux = doc.createElement("username");
-        aux.setTextContent(getUsername());
-        userElement.appendChild(aux);
+	aux = doc.createElement("username");
+	aux.setTextContent(getUsername());
+	userElement.appendChild(aux);
 
-        aux = doc.createElement("firstnames"); // Mantém o camelCase original do teu projeto
-        aux.setTextContent(getFirstNames());
-        userElement.appendChild(aux);
+	aux = doc.createElement("firstNames");
+	aux.setTextContent(getFirstNames());
+	userElement.appendChild(aux);
 
-        aux = doc.createElement("lastnames"); // Mantém o camelCase original do teu projeto
-        aux.setTextContent(getLastNames());
-        userElement.appendChild(aux);
+	aux = doc.createElement("lastNames");
+	aux.setTextContent(getLastNames());
+	userElement.appendChild(aux);
 
-        if (getEmail() != null) {
-            aux = doc.createElement("email");
-            String e = getEmail();
-            aux.setTextContent((e == null) ? "" : e);
-            userElement.appendChild(aux);
-        }
+	if (getEmail() != null) {
+	    aux = doc.createElement("email");
+	    String e = getEmail();
+	    aux.setTextContent((e == null) ? "" : e);
+	    userElement.appendChild(aux);
+	}
 
-        if (getGender() != null) {
-            aux = doc.createElement("gender");
-            String g = getGender();
-            aux.setTextContent((g == null) ? "" : g);
-            userElement.appendChild(aux);
-        }
+	if (getGender() != null) {
+	    aux = doc.createElement("gender");
+	    String g = getGender();
+	    aux.setTextContent((g == null) ? "" : g);
+	    userElement.appendChild(aux);
+	}
 
-        if (getBirthdate() != null) {
-            aux = doc.createElement("birthdate");
-            if (getBirthdate() == null)
-                aux.setTextContent("");
-            else
-                aux.setTextContent(dateToXsd(getBirthdate()));
-            userElement.appendChild(aux);
-        }
-        
-        if (getPhotography() != null) {
-            aux = doc.createElement("photography");
-            String foto = getPhotography().getBase64();
-            aux.setTextContent((foto == null) ? "" : foto);
-            userElement.appendChild(aux);
-        }
+	if (getBirthdate() != null) {
+	    aux = doc.createElement("birthdate");
+	    if (getBirthdate() == null)
+		aux.setTextContent("");
+	    else
+		aux.setTextContent(dateToXsd(getBirthdate()));
+	    userElement.appendChild(aux);
+	}
+	// Fotografia (se disponível)
+	if (getPhotography() != null) {
+	    aux = doc.createElement("photography");
+	    String foto = getPhotography().getBase64();
+	    aux.setTextContent((foto == null) ? "" : foto);
+	    userElement.appendChild(aux);
+	}
 
-        if (getNationality() != null) {
-            aux = doc.createElement("nationality");
-            String abr = getNationality().getAbbreviation();
-            aux.setTextContent((abr == null) ? "" : abr);
-            userElement.appendChild(aux);
-        }
+	// Nacionalidade
+	if (getNationality() != null) {
+	    aux = doc.createElement("nationality");
+	    String abr = getNationality().getAbbreviation();
+	    aux.setTextContent((abr == null) ? "" : abr);
+	    userElement.appendChild(aux);
+	}
 
-        aux = doc.createElement("password");
-        aux.setTextContent(getPassword());
-        userElement.appendChild(aux);
+	aux = doc.createElement("password");
+	aux.setTextContent(getPassword());
+	userElement.appendChild(aux);
 
-        // --- ADICIONAR ESTATÍSTICAS GARANTIDAMENTE DENTRO DO USER ---
-        aux = doc.createElement("vitorias");
-        aux.setTextContent(String.valueOf(getVitorias()));
-        userElement.appendChild(aux);
+	// Procura o Nó principal
+	NodeList uss = doc.getElementsByTagName("users");
+	if (uss.getLength() != 1) {
+	    System.out.println("Não encontrou o elemento raiz!");
+	    return; // erro, inconsistencia
+	}
+	Node principal = uss.item(0);
 
-        aux = doc.createElement("derrotas");
-        aux.setTextContent(String.valueOf(getDerrotas()));
-        userElement.appendChild(aux);
+	// Procura o Nó correpondente ao utilizador atual
+	NodeList nl = doc.getElementsByTagName("userid");
+	int i = 0;
+	for (; i <= nl.getLength(); i++)
+	    if (nl.item(i).getTextContent().equals(userId.toString()))
+		break;
 
-        aux = doc.createElement("tempo");
-        aux.setTextContent(String.valueOf(getTempo()));
-        userElement.appendChild(aux);
+	// Remove o utilizador antigo
+	principal.removeChild(nl.item(i).getParentNode());
 
-        // 3. APENAS AGORA lidamos com a árvore principal do XML para substituição
-        NodeList uss = doc.getElementsByTagName("users");
-        if (uss.getLength() != 1) {
-            System.out.println("Não encontrou o elemento raiz!");
-            return; 
-        }
-        Node principal = uss.item(0);
+	// Acrescenta o utilizaor atual
+	principal.appendChild(userElement);
 
-        // Procura o Nó correspondente ao ID do utilizador atual para substituição segura
-        NodeList nl = doc.getElementsByTagName("userid");
-        Node noAntigo = null;
-        for (int i = 0; i < nl.getLength(); i++) {
-            if (nl.item(i).getTextContent().equals(userId.toString())) {
-                noAntigo = nl.item(i).getParentNode();
-                break;
-            }
-        }
-
-        // Se o utilizador já existia no XML, removemos a versão antiga antes de colocar a nova
-        if (noAntigo != null) {
-            principal.removeChild(noAntigo);
-        }
-
-        // Acrescenta o bloco completo <user>...</user> à raiz <users>
-        principal.appendChild(userElement);
-
-        // 4. Validação final do esquema XSD
-        try {
-            XMLDoc.validDocXSD(doc, XMLDoc.getContexto() + file + ".xsd");
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    /**
-     * Atualiza o XML com o resultado final do jogo de um utilizador.
-     */
-    /**
-     * Atualiza diretamente as estatísticas do jogador no XML sem recriar o nó
-     * e garantindo que a password e outros dados nunca são alterados.
-     */
-    public static synchronized void registarResultadoJogo(String username, boolean ganhou, boolean perdeu, int tempoJogado) {
-        try {
-            // 1. Procurar o elemento <user> correspondente ao username no documento na memória RAM
-            NodeList nl = doc.getElementsByTagName("user");
-            Element userElement = null;
-            
-            for (int i = 0; i < nl.getLength(); i++) {
-                Element uEl = (Element) nl.item(i);
-                NodeList unList = uEl.getElementsByTagName("username");
-                if (unList.getLength() == 1 && unList.item(0).getTextContent().equals(username)) {
-                    userElement = uEl;
-                    break;
-                }
-            }
-            
-            if (userElement != null) {
-                // 2. Ler os valores atuais das estatísticas (se não existirem em users antigos, assume 0)
-                int vitorias = 0;
-                int derrotas = 0;
-                int tempo = 0;
-                
-                NodeList nv = userElement.getElementsByTagName("vitorias");
-                if (nv.getLength() == 1) vitorias = Integer.parseInt(nv.item(0).getTextContent());
-                
-                NodeList nd = userElement.getElementsByTagName("derrotas");
-                if (nd.getLength() == 1) derrotas = Integer.parseInt(nd.item(0).getTextContent());
-                
-                NodeList nt = userElement.getElementsByTagName("tempo");
-                if (nt.getLength() == 1) tempo = Integer.parseInt(nt.item(0).getTextContent());
-                
-                // 3. Somar os resultados do jogo atual
-                if (ganhou) vitorias++;
-                if (perdeu) derrotas++;
-                tempo += tempoJogado;
-                
-                // 4. Atualizar ou Criar as tags de forma segura respeitando a ordem estrita do XSD
-                
-                // --- VITORIAS ---
-                Element eVitorias;
-                if (nv.getLength() == 1) {
-                    eVitorias = (Element) nv.item(0);
-                    eVitorias.setTextContent(String.valueOf(vitorias));
-                } else {
-                    eVitorias = doc.createElement("vitorias");
-                    eVitorias.setTextContent(String.valueOf(vitorias));
-                    // Insere logo a seguir à password para respeitar o XSD
-                    Node passNode = userElement.getElementsByTagName("password").item(0);
-                    userElement.insertBefore(eVitorias, passNode.getNextSibling());
-                }
-                
-                // --- DERROTAS ---
-                Element eDerrotas;
-                if (nd.getLength() == 1) {
-                    eDerrotas = (Element) nd.item(0);
-                    eDerrotas.setTextContent(String.valueOf(derrotas));
-                } else {
-                    eDerrotas = doc.createElement("derrotas");
-                    eDerrotas.setTextContent(String.valueOf(derrotas));
-                    // Insere logo a seguir às vitorias
-                    userElement.insertBefore(eDerrotas, eVitorias.getNextSibling());
-                }
-                
-                // --- TEMPO ---
-                Element eTempo;
-                if (nt.getLength() == 1) {
-                    eTempo = (Element) nt.item(0);
-                    eTempo.setTextContent(String.valueOf(tempo));
-                } else {
-                    eTempo = doc.createElement("tempo");
-                    eTempo.setTextContent(String.valueOf(tempo));
-                    // Insere logo a seguir às derrotas
-                    userElement.insertBefore(eTempo, eDerrotas.getNextSibling());
-                }
-                
-                // --- UPDATED (Data de Atualização) ---
-                NodeList nu = userElement.getElementsByTagName("updated");
-                if (nu.getLength() == 1) {
-                    nu.item(0).setTextContent(dateTimeToXsd(LocalDateTime.now()));
-                }
-                
-                // 5. Validar a estrutura contra o XSD e gravar no disco de forma segura
-                XMLDoc.validDocXSD(doc, XMLDoc.getContexto() + file + ".xsd");
-                _save();
-                
-                System.out.println("✅ Estatísticas do jogador '" + username + "' atualizadas com sucesso (Password Intacta)!");
-            } else {
-                System.err.println("⚠️ Alerta: Jogador '" + username + "' não foi encontrado no XML.");
-            }
-        } catch (Exception e) {
-            System.err.println("❌ Erro ao gravar estatísticas de " + username + ": " + e.getMessage());
-            e.printStackTrace();
-        }
+	try {// para prevenir algum bug
+	    XMLDoc.validDocXSD(doc, XMLDoc.getContexto() + file + ".xsd");
+	} catch (SAXException e) {
+	    e.printStackTrace();
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
     }
 
     /**
@@ -993,16 +863,6 @@ public class User {
 	setNationality((nl.getLength() == 1) ? nl.item(0).getTextContent() : null);
 	nl = userElement.getElementsByTagName("photography");
 	setPhotography((nl.getLength() == 1) ? nl.item(0).getTextContent() : null);
-	// LER ESTATÍSTICAS DE FORMA SEGURA
-	nl = userElement.getElementsByTagName("vitorias");
-	// Se encontrar 1 tag, lê o valor; se encontrar 0 (caso do gandalf), assume 0
-	setVitorias((nl.getLength() == 1) ? Integer.parseInt(nl.item(0).getTextContent()) : 0);
-
-	nl = userElement.getElementsByTagName("derrotas");
-	setDerrotas((nl.getLength() == 1) ? Integer.parseInt(nl.item(0).getTextContent()) : 0);
-
-	nl = userElement.getElementsByTagName("tempo");
-	setTempo((nl.getLength() == 1) ? Integer.parseInt(nl.item(0).getTextContent()) : 0);
     }
 
     /**
@@ -1455,6 +1315,86 @@ public class User {
      * @param valor "true"-bloquear ou "false"-desbloquear
      * @throws XPathExpressionException em caso de erro
      */
+    private static Element getDirectChild(Element parent, String tagName) {
+	NodeList children = parent.getChildNodes();
+	for (int i = 0; i < children.getLength(); i++) {
+	    Node n = children.item(i);
+	    if (n.getNodeType() == Node.ELEMENT_NODE && tagName.equals(n.getNodeName())) {
+		return (Element) n;
+	    }
+	}
+	return null;
+    }
+
+    private static Element ensureChildAfter(Element parent, String tagName, String afterTagName) {
+	Element existing = getDirectChild(parent, tagName);
+	if (existing != null) {
+	    return existing;
+	}
+
+	Element novo = doc.createElement(tagName);
+	novo.setTextContent("0");
+
+	Element after = getDirectChild(parent, afterTagName);
+	if (after == null) {
+	    parent.appendChild(novo);
+	    return novo;
+	}
+
+	Node ref = after.getNextSibling();
+	while (ref != null && ref.getNodeType() != Node.ELEMENT_NODE) {
+	    ref = ref.getNextSibling();
+	}
+	if (ref == null) {
+	    parent.appendChild(novo);
+	} else {
+	    parent.insertBefore(novo, ref);
+	}
+	return novo;
+    }
+
+    private static int parseIntOrZero(String valor) {
+	try {
+	    return Integer.parseInt(valor.trim());
+	} catch (Exception e) {
+	    return 0;
+	}
+    }
+
+    private static boolean incrementarEstatistica(String username, String campo) throws XPathExpressionException {
+	NodeList us = XMLDoc.getXPath("/users/user[username/text()='" + username + "']", doc);
+	if (us.getLength() != 1) {
+	    return false;
+	}
+
+	Element user = (Element) us.item(0);
+	ensureChildAfter(user, "vitorias", "password");
+	ensureChildAfter(user, "derrotas", "vitorias");
+	ensureChildAfter(user, "tempo", "derrotas");
+
+	Element target = getDirectChild(user, campo);
+	if (target == null) {
+	    return false;
+	}
+	int atual = parseIntOrZero(target.getTextContent());
+	target.setTextContent(String.valueOf(atual + 1));
+	return true;
+    }
+
+    public static synchronized void registarResultadoJogo(String vencedor, String vencido) throws Exception {
+	boolean alterou = false;
+	if (vencedor != null && !vencedor.isBlank()) {
+	    alterou = incrementarEstatistica(vencedor, "vitorias") || alterou;
+	}
+	if (vencido != null && !vencido.isBlank()) {
+	    alterou = incrementarEstatistica(vencido, "derrotas") || alterou;
+	}
+	if (alterou) {
+	    _save();
+	    _load();
+	}
+    }
+
     public static void lock(String username, String valor) throws XPathExpressionException {
 	// Procura o nó "blocked" do utilizador
 	NodeList us = XMLDoc.getXPath("/users/user[username/text()='" + username + "']/blocked", doc);
@@ -1520,22 +1460,70 @@ public class User {
 	}
     }
 
-
+    /**
+     * Atualiza um utilizador existente ou cria um novo se não existir
+     * 
+     * Este método recebe um objeto da classe `User` como argumento e atualiza os
+     * dados do utilizador indicado em parametro no DOM. Se o utilizador não existir
+     * no documento, ele é criado.
+     * 
+     * @param user Instância da classe User com os dados do utilizador a ser
+     *             atualizado/adicionado
+     * @throws XPathExpressionException             Exceção lançada caso ocorra um
+     *                                              erro na expressão XPath
+     *                                              utilizada para localizar o
+     *                                              utilizador
+     * @throws DOMException                         Exceção lançada caso ocorra um
+     *                                              erro ao manipular o documento
+     *                                              XML
+     * @throws ParserConfigurationException         Exceção lançada caso não seja
+     *                                              possível criar um novo documento
+     *                                              XML (necessário para a criação
+     *                                              de um novo utilizador)
+     * @throws TransformerException                 Exceção lançada caso ocorra um
+     *                                              erro ao transformar o documento
+     *                                              XML
+     * @throws TransformerFactoryConfigurationError Exceção lançada caso não seja
+     *                                              possível configurar a fábrica de
+     *                                              transformadores XSLT
+     * @throws IOException                          Exceção lançada caso ocorra um
+     *                                              erro ao ler ou escrever o
+     *                                              documento XML
+     * @throws SAXException                         Exceção lançada caso ocorra um
+     *                                              erro ao analisar o documento XML
+     */
     public static void _replace(User user) throws ParserConfigurationException, SAXException, IOException,
 	    TransformerFactoryConfigurationError, TransformerException, XPathExpressionException {
 
-	// Procura o Nó principal <users> para garantir a consistência do documento
+	// Procura o elemento "user" com o mesmo ID do utilizador indicado em parametro
+	NodeList us = XMLDoc.getXPath("/users/user[userid/text()='" + user.getUserId() + "']", doc);
+
+	// Comentário:
+	// - A expressão XPath acima procura por um elemento "user" dentro do elemento
+	// "users"
+	// - O filtro `[userid/text()=' + user.getUserId() + ']` garante que apenas o
+	// utilizador com o ID especificado seja selecionado.
+
+	// Procura o Nó principal
 	NodeList nl = doc.getElementsByTagName("users");
 	if (nl.getLength() != 1) {
 	    System.out.println("Não encontrou o elemento raiz!");
-	    return; // erro, inconsistência
+	    return; // erro, inconsistencia
 	}
+	Node principal = nl.item(0);
 
-	// Chamamos diretamente o toDocument(). 
-	// Ele vai localizar o ID do utilizador antigo, removê-lo com segurança e anexar o utilizador atualizado.
+	// Comentário:
+	// - Obtém o elemento "users" principal do documento XML.
+	// - Verifica se existe apenas um elemento "users". Se não, há um erro na
+	// estrutura do documento.
+
+	// Se o utilizador existir, remove a versão antiga antes de inserir a atualizada.
+	if (us.getLength() == 1) {
+	    principal.removeChild(us.item(0));
+	}
+	// Garante que a versão atual do utilizador fica no DOM.
 	user.toDocument();
-
-	// Valida o XSD, cria o ficheiro de backup (.bak) e grava as alterações no disco
+	// Salva as alterações no disco.
 	_save();
     }
 
